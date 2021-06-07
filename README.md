@@ -32,3 +32,13 @@ Objective: Find the optimal learning rate of a neural network
     PEP8 (found here: https://www.python.org/dev/peps/pep-0008/)
   
     Doc-Strings
+
+
+Guidance to ResNet-9's implementation is the following paper: 
+@inproceedings{he2016deep,
+  title={Deep residual learning for image recognition},
+  author={He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
+  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pages={770--778},
+  year={2016}
+}
