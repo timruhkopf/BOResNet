@@ -1,17 +1,19 @@
+import torch
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib
-from matplotlib import font_manager
+# import pandas as pd
+# import matplotlib
+# from matplotlib import font_manager
 
 
-def load_npz_kmnist(path):
+def load_npz_kmnist(folder, files):
     """
-    Load npz files from disk
-    :param path: str.
-    :return: np.array
+    Load npz files from disk and make tensors of them
+    :param folder: str.
+    :param files: list of str.
+    :return: list of tensors
     """
-    return np.load(path)['arr_0']
+    return [torch.Tensor(np.load(folder + p)['arr_0']) for p in files]
 
 
 def plot_kmnist(x_array, y_array, labelpath, idx):
