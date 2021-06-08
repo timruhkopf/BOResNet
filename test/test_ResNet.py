@@ -1,25 +1,25 @@
 import unittest
 import torch
-import torch.nn as nn
-from src.utils import load_npz_kmnist
-import os
+# import torch.nn as nn
+# from src.utils import load_npz_kmnist
+# import os
 
 from src.ResNet import ResNet
 
 
 class Test_ResidualBlock(unittest.TestCase):
 
-    def setUp(self) -> None:
-        os.chdir("..")
-        os.getcwd()
-        root_data = 'Data/Raw/'
-        self.x_train, self.y_train = load_npz_kmnist(
-            folder=root_data,
-            files=['kmnist-train-imgs.npz', 'kmnist-train-labels.npz'])
-
-        self.y_train = torch.unsqueeze(self.y_train, dim=1)
-        self.x_train = torch.reshape(self.x_train, (-1, 1, 28, 28))
-        print('train_shape', self.x_train.shape)
+    # def setUp(self) -> None:
+    #     os.chdir("..")
+    #     os.getcwd()
+    #     root_data = 'Data/Raw/'
+    #     self.x_train, self.y_train = load_npz_kmnist(
+    #         folder=root_data,
+    #         files=['kmnist-train-imgs.npz', 'kmnist-train-labels.npz'])
+    #
+    #     self.y_train = torch.unsqueeze(self.y_train, dim=1)
+    #     self.x_train = torch.reshape(self.x_train, (-1, 1, 28, 28))
+    #     print('train_shape', self.x_train.shape)
 
     def test_architechture_scaling_data(self):
         """
