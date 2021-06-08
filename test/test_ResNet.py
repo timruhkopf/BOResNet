@@ -79,5 +79,6 @@ class Test_ResidualBlock(unittest.TestCase):
         self.assertEqual(resnet(torch.ones((1, 1, 28, 28))).shape,
                          torch.Size([1, 10]))
 
+
 if __name__ == '__main__':
     unittest.main(exit=False)

@@ -35,7 +35,8 @@ class ResNet(nn.Module):
 
         # final layers for linear combination & class prediction
         # assuming square image, linear dim is caused by 7x7 conv & max pooling
-        linear_dim = architecture[-1][-1] * int(((img_size[0]-4)/2/2)**2)
+        linear_dim = architecture[-1][-1] * int(
+            ((img_size[0] - 4) / 2 / 2) ** 2)
         self.layers.extend([nn.MaxPool2d(2, 2),
                             nn.Flatten(),
                             nn.Linear(in_features=linear_dim,
@@ -54,113 +55,3 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
-
-
-
-    #     for layer in self.layers:
-    #
-    #         x = layer(x)
-    #
-    #
-    #
-    #     return x
-
-    # class ResNet9:
-    #     def __init__(self, cconfig, skip=2):
-    #         """
-    #
-    #         :param cconfig: tuple of tuples: describes the entire architecture.
-    #         e.g. ((28, 28),
-    #         :param skip: number of conv layers between a skip connection
-    #         """
-    #         # TODO: check the cconfig input
-    #         if cconfig == False:
-    #             raise ValueError()
-    #
-    #         self.layers = [nn.Conv2d(1, 64, 7),
-    #                        nn.MaxPool2d(2, 2),
-    #
-    #                        # (1) Residblock with skip = 2 & ident. map (same sized)
-    #                        # cunits = (64, 64, 64)
-    #                        # keep value around
-    #                        nn.Conv2d(64, 64, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        nn.ReLU(),
-    #
-    #                        nn.Conv2d(64, 64, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        # add skip
-    #                        nn.ReLU(),
-    #
-    #                        # (2) Residblock with skip = 2 & ident. map (same sized)
-    #                        # cunits = (64, 64, 64)
-    #                        # keep value around
-    #                        nn.Conv2d(64, 64, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        nn.ReLU(),
-    #
-    #                        nn.Conv2d(64, 64, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        # add skip
-    #                        nn.ReLU(),
-    #
-    #                        # (3) Residblock skip=2, 1x1 conv for W_s sizing
-    #                        # cunits = (64, 128, 128)
-    #                        # keep value X_0 around
-    #                        nn.Conv2d(64, 128, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        nn.ReLU(),
-    #
-    #                        nn.Conv2d(128, 128, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        # add skip, but using torch.nn.Conv2d(64, 128, 1)(X_0)
-    #                        nn.ReLU(),
-    #
-    #                        # (4) Residblock with skip = 2 & ident. map (same sized)
-    #                        # cunits = (128, 128, 128)
-    #                        # keep value around
-    #                        nn.Conv2d(128, 128, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        nn.ReLU(),
-    #
-    #                        nn.Conv2d(128, 128, 3, 1),
-    #                        nn.BatchNorm2d(),
-    #                        # add skip
-    #                        nn.ReLU(),
-    #
-    #                        nn.MaxPool2d(),
-    #                        nn.Flatten(),  # TODO add dim
-    #                        nn.Linear(),
-    #                        nn.Softmax()
-    #                        ]
-    #
-    #         # input convolution without skip connection & subsequent layers
-    #         # self.layers = [nn.Conv2d(cconfig[0]),
-    #         #                nn.MaxPool2d(),
-    #         #                *[ResidualBlock(param, skip) for param in cconfig[1:]],
-    #         #                nn.MaxPool2d(2, 2)]
-    #         #
-    #         # add the last fully connected linear layer; based on the former
-    #         # output size.
-    #         # TODO adjust size after max pooling
-    #         # self.layers.append(nn.Linear(torch.prod(self.layers[-1].shape[1:])))
-    #
-    #     def forward(self, X):
-    #         # path through ResNet-Conv blocks
-    #         for l in self.layers[:-1]:
-    #             X = l(X)
-    #
-    #         # flatten from conv to fc and make prediction after linear layer
-    #         X = torch.flatten(X, 1)
-    #         return nn.Softmax(self.layers(X))
-    #
-    #
-    # if __name__ == '__main__':
-    #     # check forward path works
-    #     X = None
-    #     ResNet9()
-    #     ResNet9.forward(X)
-    #
-    # m = nn.MaxPool2d(3, stride=2)
-    # input = torch.randn(20, 16, 50)
-    # output = m(input)
