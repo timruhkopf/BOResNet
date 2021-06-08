@@ -3,7 +3,7 @@ import itertools
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, cunits, kernel=3):
+    def __init__(self, cunits, kernel_size=3):
         """
         Same sized Convolution
         implements a scalable version of  the dashed and solid line residual
@@ -48,7 +48,7 @@ class ResidualBlock(nn.Module):
         To adjust the size, a 1x1 convolution of appropriate no. of channels
         is used as skip connection before adding the scaled X to the
         residblock's output.
-        :param kernel: the squared filter size used in all convolutions in
+        :param kernel_size: the squared filter size used in all convolutions in
         the residblock.
         """
 
@@ -57,12 +57,12 @@ class ResidualBlock(nn.Module):
 
         # save arguments for later usage
         self.cunits = cunits
-        self.kernel = kernel
+        self.kernel_size = kernel_size
 
         # scalable version of repetitive parts (conv-bn-relu) to skip over
         # notice, that relu are applied in forward path!
         self.layers = list(itertools.chain.from_iterable(
-            (nn.Conv2d(no_in, no_out, kernel_size=kernel, padding=1),
+            (nn.Conv2d(no_in, no_out, kernel_size=kernel_size, padding=1),
              nn.BatchNorm2d(no_out),
              nn.ReLU())
             for no_in, no_out in zip(cunits[:-2], cunits[1:-1])))
@@ -70,12 +70,23 @@ class ResidualBlock(nn.Module):
         # final (conv-bn-skip-relu)
         # add identity or 1x1 conv depending on the shape-change in residblock
         self.layers.extend([
-            nn.Conv2d(cunits[-2], cunits[-1], kernel, padding=1),
+            nn.Conv2d(cunits[-2], cunits[-1], kernel_size, padding=1),
             nn.BatchNorm2d(cunits[-1]),
             # skip connection; either identity or 1x1 conv to adjust shape
             nn.Identity() if cunits[0] == cunits[-1] else \
                 nn.Conv2d(cunits[0], cunits[-1], 1),
             nn.ReLU()])
+
+    def __repr__(self):
+        base = 'Residualblock(cunits={}, kernel_size={}):'.format(
+            str(self.cunits), self.kernel_size)
+
+        sublayers = '\n\t'.join([str(l) for l in self.layers[:-2]])
+
+        skip = '\n\t'.join([str(l) for l in self.layers[-2:]])
+
+        return '{}\n\t---scaled block---\n\t{}\n\t---skip connection' \
+               '---\n\t{}'.format(base, sublayers, skip)
 
     def forward(self, x):
         xskip = x

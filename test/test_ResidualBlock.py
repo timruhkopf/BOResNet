@@ -27,7 +27,7 @@ class Test_ResidualBlock(unittest.TestCase):
     def test_forward_dimensions(self):
         residblock = ResidualBlock(
             cunits=(1, 64, 64, 128),
-            kernel=3)
+            kernel_size=3)
 
         self.assertEqual(residblock.forward(self.x_train[:1]).shape, \
                          torch.Size([1, 128, 28, 28]))
@@ -40,14 +40,14 @@ class Test_ResidualBlock(unittest.TestCase):
         # case 1: 3 convolutions + 1x1 convolution: 4 total
         residblock = ResidualBlock(
             cunits=(1, 64, 64, 64),
-            kernel=3)
+            kernel_size=3)
 
         self.assertEqual(self.no_convs(residblock), 4,
                          'number of convolutions are incorrect')
 
         residblock = ResidualBlock(
             cunits=(64, 64, 64),
-            kernel=3)
+            kernel_size=3)
 
         self.assertEqual(self.no_convs(residblock), 2,
                          'number of convolutions are incorrect')
@@ -55,7 +55,7 @@ class Test_ResidualBlock(unittest.TestCase):
     def test_cunits_placed_to_convs(self):
         residblock = ResidualBlock(
             cunits=(1, 2, 3),
-            kernel=3)
+            kernel_size=3)
 
         channels = [(l.in_channels, l.out_channels)
                     for l in residblock.layers \
