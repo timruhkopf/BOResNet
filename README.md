@@ -1,12 +1,12 @@
 As part of my interviews for a PhD position at the AutoML group located in
 Hannover at the Leibniz University, I was tasked the following coding challenge
 
-Objective: Find the optimal learning rate of a neural network
+## Objective: Find the optimal learning rate of a neural network
 
 * Optimizer: Implement Bayesian Optimization (BO) as a global optimization
     approach use a Gaussian Process as a predictive model (you can use any
     existing GP library) use expected improvement (EI) as an acquisition
-    function Use an optimization budget of 10 function evaluations if you
+    function. Use an optimization budget of 10 function evaluations if you
     want to watch some intro videos for BO, you can find our MOOC on AutoML
     on the ai-campus.org For the deep neural network, please follow the
     specifications below: A small ResNet, e.g., a ResNet-9 --- should not take
@@ -33,12 +33,28 @@ Objective: Find the optimal learning rate of a neural network
   
     Doc-Strings
 
+## My Solution
 
-Guidance to ResNet-9's implementation is the following paper: 
-@inproceedings{he2016deep,
-  title={Deep residual learning for image recognition},
-  author={He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
-  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
-  pages={770--778},
-  year={2016}
-}
+### ResNet & ResdiualBlocks
+Following the formulation of https://github.com/matthias-wright/cifar10-resnet,
+I interpreted a ResNet-9 as a 9-layer ResNet from this paper:
+
+    @inproceedings{he2016deep,
+      title={Deep residual learning for image recognition},
+      author={He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
+      booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+      pages={770--778},
+      year={2016}
+    }
+
+Only alteration to this paper: instead of avg. pooling, a maxpooling 2x2 
+with stride 2 is used.
+
+Notice, the ResidualBlock class implements both the dashed & solid line 
+identity and 1x1 convolution projections in a single and adaptive class.
+Further the interface easily allows to scale the ResidualBlock to various 
+channel configurations and an arbitrary skipping distance.
+This allows the ResNet class to be a sequential composite of ResidualBlocks,
+which facilitates the entire class.
+
+## Bayesian Optimisation
