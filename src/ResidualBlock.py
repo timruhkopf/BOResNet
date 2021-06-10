@@ -1,7 +1,7 @@
 import torch.nn as nn
 import itertools
 
-
+import torch
 class ResidualBlock(nn.Module):
     def __init__(self, cunits, kernel_size=3):
         """
@@ -61,7 +61,7 @@ class ResidualBlock(nn.Module):
 
         # scalable version of repetitive parts (conv-bn-relu) to skip over
         # notice, that relu are applied in forward path!
-        self.layers = list(itertools.chain.from_iterable(
+        self.layers = torch.nn.ModuleList(itertools.chain.from_iterable(
             (nn.Conv2d(no_in, no_out, kernel_size=kernel_size, padding=1),
              nn.BatchNorm2d(no_out),
              nn.ReLU())
@@ -97,3 +97,9 @@ class ResidualBlock(nn.Module):
 
         # relu(X+ ident(X_skip) or  relu(X+ conv1x1(X_skip).
         return self.layers[-1](x + self.layers[-2](xskip))
+
+if __name__ == '__main__':
+    residb = ResidualBlock((8,8,8), kernel_size=3)
+    # BUGFIX: the layers in a regular list do not seem to have parameters:
+    # dict(residb.named_parameters())
+    # solution to this is using torch.nn.ModuleList
