@@ -58,3 +58,6 @@ This allows the ResNet class to be a sequential composite of ResidualBlocks,
 which facilitates the entire class.
 
 ## Bayesian Optimisation
+
+Be well aware, that the pyro gp implementation apparently can predict zero 
+& negative variances. To avoid this, such values are explicitly set to 1e-10.

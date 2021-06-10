@@ -13,12 +13,11 @@ import matplotlib
 
 matplotlib.use('TkAgg')
 
-pyro.set_rng_seed(0)
+
+# pyro.set_rng_seed(0)
 
 
 # TODO Seeding
-
-# TODO consider inherrit from torch.optim
 class BayesianOptimizer:
     def __init__(self, search_space, budget, closure):
         """
@@ -45,69 +44,60 @@ class BayesianOptimizer:
         self.incumbent = self.inquired[0]
         self.inc_idx = 0
 
-    def gaussian_process(self, X, y):
-        """library for gp: https://pyro.ai/examples/gp.html"""
+    def gaussian_process(self, X, y, num_steps=1000):
+        """
+        fit the Gaussian process to the observed data <X, y>.
+        library for gp: https://pyro.ai/examples/gp.html
+        :param X: tensor.
+        :param y: tensor.
+        :param num_steps: int. Number of ADAM steps to optimize the
+        :returns None, but adds self.gpr_t to self, which is the MAP
+        predictive Model, ready for inquiry.
+        """
 
-        # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
-        #                         lengthscale=torch.tensor(10.))
-        #
-        # # TODO consider Exponential kernel instead
-        # # kernel = gp.kernels.Exponential()
-        # # TODO consider noise < 1 to smaller uncertainty around observed
-        # #  points.
-        # gpr = gp.models.GPRegression(X, y, kernel, noise=torch.tensor(1.))
-        #
-        # optimizer = torch.optim.Adam(gpr.parameters(), lr=0.005)
-        # loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
-        # losses = []
-        # num_steps = 2000
-        # for i in range(num_steps):
-        #     optimizer.zero_grad()
-        #     loss = loss_fn(gpr.model, gpr.guide)
-        #     loss.backward()
-        #     optimizer.step()
-        #     losses.append(loss.item())
+        if X.shape[0] != y.shape[0]:
+            raise ValueError('X and y tensors do not match')
 
         # now do MAP estimation:
-        # Define the same model as before.
         pyro.clear_param_store()
-        kernel = gp.kernels.Exponential(input_dim=1,
-                                        variance=torch.tensor(5.),
-                                        lengthscale=torch.tensor(10.))
+        # kernel = gp.kernels.Exponential(input_dim=1,
+        #                                 variance=torch.tensor(5.),
+        #                                 lengthscale=torch.tensor(1.))
 
-        # RBF(input_dim=1, variance=torch.tensor(5.),
-        #                     lengthscale=torch.tensor(10.))
-        gpr = gp.models.GPRegression(X, y, kernel, noise=torch.tensor(0.))
+        kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
+                                lengthscale=torch.tensor(10.))
+        self.gpr_t = gp.models.GPRegression(X, y, kernel,
+                                            noise=torch.tensor(0.))
 
         # note that our priors have support on the positive reals
-        gpr.kernel.lengthscale = pyro.nn.PyroSample(dist.LogNormal(0.0, 1.0))
-        gpr.kernel.variance = pyro.nn.PyroSample(dist.LogNormal(0.0, 1.0))
+        self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(
+            dist.LogNormal(0.0, 1.0))
+        self.gpr_t.kernel.variance = pyro.nn.PyroSample(
+            dist.LogNormal(0.0, 1.0))
 
-        optimizer = torch.optim.Adam(gpr.parameters(), lr=0.005)
+        optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
         loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
         losses = []
-        num_steps = 1000
+
         for i in range(num_steps):
             optimizer.zero_grad()
-            loss = loss_fn(gpr.model, gpr.guide)
+            loss = loss_fn(self.gpr_t.model, self.gpr_t.guide)
             loss.backward()
             optimizer.step()
             losses.append(loss.item())
 
         # plt.plot(losses)
 
+        # self.gpr_t.kernel.variance.item()
+        # self.gpr_t.kernel.lengthscale.item()
+        # self.gpr_t.noise.item()
 
-        self.gpr_t = gpr
-        gpr.kernel.variance.item()
-        gpr.kernel.lengthscale.item()
-        gpr.noise.item()
-
-    def gp_plot(self, X, y, model, n_test=500):
+    def bo_plot(self, X, y, acquisition=False, n_test=500,
+                closure=None):
         """
 
         :param X:
         :param y:
-        :param model:
         :param n_test:
         :return:
         """
@@ -118,13 +108,14 @@ class BayesianOptimizer:
 
         # generate points at which gp is evaluated at for plotting
         Xtest = torch.linspace(*self.search_space, n_test)
+        if closure is not None:
+            plt.plot(Xtest.numpy(), closure(Xtest.numpy()))
 
         # compute predictive mean and variance for each of these points
         with torch.no_grad():
-            mean, cov = model(Xtest, full_cov=True, noiseless=False)
-
-        # standard deviation at each input point x (testpoints)
-        sd = cov.diag().sqrt()
+            mean, cov = self.gpr_t(Xtest, full_cov=True, noiseless=False)
+            # standard deviation at each input point x (testpoints)
+            sd = cov.diag().sqrt()
 
         # plot the mean prediction
         plt.plot(Xtest.numpy(), mean.numpy(), 'r', lw=2)
@@ -136,40 +127,103 @@ class BayesianOptimizer:
                          (mean + 2.0 * sd).numpy(),
                          color='C0', alpha=0.3)
 
+        if acquisition:
+            # FIXME: the acquisition function becomes negative - since Z
+            #  is negative: c_inc < mu^(t) (lamb). this should not be!
+            plt.plot(Xtest.numpy(), self.expected_improvement(Xtest, eps=0))
+
+            # TODO cache that value rather than recompute!
+            next_lamb = self.max_ei(precision=50)
+            plt.plot(next_lamb.numpy(),
+                     self.expected_improvement(next_lamb, eps=0).numpy(),
+                     'v')
+
         plt.xlim(*self.search_space)
+        plt.show()
 
-        # TODO add acquisition function & display incumbent
-
-    def expected_improvement(self, lamb, eps):
+    def expected_improvement(self, lamb, eps=0.):
         """
         function definition based on the lecture slides
         https://learn.ki-campus.org/courses/automl-luh2021/items/7rd8zSXREMWYBfbVTXLcci
         """
+        with torch.no_grad():
+            # inquire the MAP estimate for mu^t(lamb), sd^t(lamb)
+            mu_t, cov_t = self.gpr_t(lamb, full_cov=True, noiseless=False)
+            var = cov_t.diag()
+            # FIXME pyros' GP may produce negative & zero variance predictions
+            #  (~= -9e-7) ! to avoid producing nans in the following
+            #  calculations, they are set to 1e-10 instead.
+            var[var <= 0] = 1e-10
+            sd_t = var.sqrt()
 
-        # PSEUDO CODE:
-        # mu = None
-        # sigma = None
-        # Z = (self.cost[self.inc_idx] - mu(lamb) + eps) / sigma(lamb)
-        #
-        # # if sigma(lamb) >0
-        # u_t = sigma(lamb) * (Z * td.Normal.cdf(Z) +
-        #                      torch.exp(td.Normal.log_prob(lamb)) +
-        #                      # Normalizing constant std. Normal:
-        #                      torch.tensor([2. * pi]) ** -1 / 2)
-        #
-        # else sigma(lamb) =0
-        # u_t = torch.tensor([0.])
-        pass
+        # calculate EI
+        Z = (self.cost[self.inc_idx] - mu_t - eps) / sd_t
+        u = sd_t * (Z * td.Normal(0., 1.).cdf(Z) +
+                    torch.exp(td.Normal(0., 1.).log_prob(Z)) +
+                    # Normalizing constant of std. Normal required only for
+                    # plotting the exact EI:
+                    torch.tensor([2. * pi]) ** -1 / 2)
 
-    def bo_loop(self):
+        return u
+
+    def max_ei(self, precision=50):
         """
-        pseudo code:
+        Naive optimization of the Expected improvement
+        This function uses a trivial grid evaluation across the search space
+        and evaluates self.expected_improvement for each of these grid points.
+        lastly, it returns lamb* = argmax_{lamb} u(lamb).
+
+        :param precision: number of EI evaluations per distance unit of the 1d
+        search space.
+        :returns the maximum value of the current EI function
+        """
+        lamb = torch.linspace(*self.search_space,
+                              steps=int(self.search_space[1] - \
+                                        self.search_space[0] * precision))
+
+        u = self.expected_improvement(lamb, eps=0)
+
+        # find lamb* = argmax_{lamb} u(lamb)
+        argmax = u.max(0)[1]
+        return lamb[argmax].reshape((1,))  # = lamb*
+
+    def max_ei_sgd(self, ei_budget=1000):
+        """
+        # DEPREC
+        The original idea was to maximize ei using autograd: d u / d lamb,
+        but since the function may be multimodal that may be parted by flat
+        regions (especially if the model does not assume noisy observations
+        c(lamb) + e). In this case SGD fails and most likely will stay get
+        stuck in local minima.
+        :param ei_budget: int. number of SGD steps
+        """
+        # Select next query point:
+        # optimize over self.expected_improvement() to find max value lamb.
+        lamb = torch.nn.Parameter(torch.tensor([self.incumbent]))
+        optimizer_EI = torch.optim.SGD([lamb], lr=0.05)
+        lamb.grad = None
+        losses = []
+
+        for i in range(ei_budget):
+            optimizer_EI.zero_grad()
+            loss = self.expected_improvement(lamb, eps=0.)
+            loss.backward()
+            optimizer_EI.step()
+            losses.append(loss.item())
+
+        lamb.data = lamb
+        return lamb
+
+    def optimize(self):
+        """
+        Execute the bayesian optimization on the closure.
 
         Require: Search space Λ , cost function c, acquisition function u, pre-
             dictive model ĉ, maximal number of function evaluations T
         Result : Best configuration λ̂ (according to D or ĉ)
 
-        (1) Initialize data D (0) with initial observations
+        (1) Initialize data D (0) with initial observations. (done at init
+        of BO)
         for t = 1 to T do
             Fit predictive model ĉ^(t) on D^(t−1)
             Select next query point:
@@ -182,53 +236,29 @@ class BayesianOptimizer:
         the return value is called the INCUMBENT
         """
 
-        for t in range(1, self.budget):
+        for t in range(1, self.budget + 1):
             # Fit predictive model
+            # TODO find a third party implementation, that allows online
+            #  computation (adding new values rather than creating an
+            #  entirely new GP
             self.gaussian_process(X=self.inquired[:t], y=self.cost[:t])
 
-            # Select next query point:
-            # optimize over self.expected_improvement() to find max value lamb.
-            lamb = None
+            # select next point to query
+            lamb = self.max_ei(precision=50)
             self.inquired[t] = lamb
+
+            # plot the gp + acquisition function
+            # self.bo_plot(X=self.inquired[:t],
+            #              y=self.cost[:t],
+            #              acquisition=True)
 
             # Query cost function
             self.cost[t] = self.closure(lamb)
 
             # replace the incumbent if necessary
-            # TODO check if we deal with loss, that min on neg is correct.
-            #  this is a call for a convention on max / min the function!
             self.incumbent, self.inc_idx, _ = min([
                 (self.incumbent, self.inc_idx, self.cost[self.inc_idx]),
-                (lamb, t, self.cost[t])],
+                (lamb.data, t, self.cost[t])],
                 key=lambda x: x[2])
 
         return self.incumbent
-
-    def evaluate_model_with_SGD(self, model, dataloader, epochs, lr):
-        """
-         Train model once
-        training the model on the data from the dataloader for n epochs using sgd,
-        with a specified learning rate.
-        :param model: instance to a nn.Module
-        :param dataloader:
-        :param epochs: int.
-        :param lr: float.
-        :return:
-        """
-        # TODO look how dataloader was supposed to be sampeled from init
-        #  iterator, then next()?
-        optimizer = SGD(model.parameters(), lr=lr)
-        loss_fn = nn.CrossEntropyLoss()
-        losses = list()  # todo change to tensor
-        for e in range(epochs):
-            # TODO change syntax to the following:
-            # generate an example
-            # dataiter = iter(trainloader)
-            # images, labels = next(dataiter)
-            for X, y in dataloader:
-                optimizer.zero_grad()
-                loss = loss_fn(model(X), y).backward()
-                optimizer.step()
-                losses.append(loss)
-
-        return losses
