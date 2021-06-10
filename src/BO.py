@@ -14,7 +14,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 
-# pyro.set_rng_seed(0)
+pyro.set_rng_seed(0)
 
 
 # TODO Seeding
@@ -30,7 +30,7 @@ class BayesianOptimizer:
         """
         # TODO check how to instantiate the model anew for each evaluation
         #  of SGD with a specific learning rate!
-        self.budget = budget
+        self.budget = budget - 1
         self.closure = closure
         self.search_space = search_space
 
@@ -38,13 +38,7 @@ class BayesianOptimizer:
         self.inquired = torch.zeros(budget)
         self.cost = torch.zeros(budget)
 
-        # TODO consider prior knowledge: different function
-        self.inquired[0] = td.Uniform(*search_space).sample([1])
-        self.cost[0] = closure(self.inquired[0])
-        self.incumbent = self.inquired[0]
-        self.inc_idx = 0
-
-    def gaussian_process(self, X, y, num_steps=1000):
+    def gaussian_process(self, X, y, num_steps=2000, noise=0.):
         """
         fit the Gaussian process to the observed data <X, y>.
         library for gp: https://pyro.ai/examples/gp.html
@@ -62,12 +56,15 @@ class BayesianOptimizer:
         pyro.clear_param_store()
         # kernel = gp.kernels.Exponential(input_dim=1,
         #                                 variance=torch.tensor(5.),
-        #                                 lengthscale=torch.tensor(1.))
-
-        kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
-                                lengthscale=torch.tensor(10.))
+        #                                 lengthscale=torch.tensor(10.))
+        # TODO Prevent variance & lengthscale optimization
+        # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
+        #                         lengthscale=torch.tensor(10.))
+        kernel = gp.kernels.Matern32(input_dim=1, variance=torch.tensor(5.),
+                                     lengthscale=torch.tensor(10.))
         self.gpr_t = gp.models.GPRegression(X, y, kernel,
-                                            noise=torch.tensor(0.))
+                                            noise=torch.tensor(noise),
+                                            jitter=1e-5)
 
         # note that our priors have support on the positive reals
         self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(
@@ -88,20 +85,27 @@ class BayesianOptimizer:
 
         # plt.plot(losses)
 
-        # self.gpr_t.kernel.variance.item()
-        # self.gpr_t.kernel.lengthscale.item()
-        # self.gpr_t.noise.item()
+        print('GP Parameter\n\t'
+              'Variance: {}\n\t'
+              'Lengthscale: {}\n\t'
+              'Noise: {}'.format(self.gpr_t.kernel.variance.item(),
+                                 self.gpr_t.kernel.lengthscale.item(),
+                                 self.gpr_t.noise.item()))
 
     def bo_plot(self, X, y, acquisition=False, n_test=500,
                 closure=None):
         """
 
-        :param X:
-        :param y:
-        :param n_test:
+        :param X: torch.Tensor.
+        :param y: torch.Tensor.
+        :param n_test: int. Number of points for plotting the function.
+        :param closure: callable. This allows to plot the true cost
+        function, if known.
         :return:
         """
 
+        # TODO beautify plot: legend, title, axis
+        # TODO save plots
         plt.figure(figsize=(12, 6))
         # plot the datapoints
         plt.plot(X.numpy(), y.numpy(), 'kx')
@@ -128,8 +132,6 @@ class BayesianOptimizer:
                          color='C0', alpha=0.3)
 
         if acquisition:
-            # FIXME: the acquisition function becomes negative - since Z
-            #  is negative: c_inc < mu^(t) (lamb). this should not be!
             plt.plot(Xtest.numpy(), self.expected_improvement(Xtest, eps=0))
 
             # TODO cache that value rather than recompute!
@@ -166,7 +168,7 @@ class BayesianOptimizer:
 
         return u
 
-    def max_ei(self, precision=50):
+    def max_ei(self, precision=50, eps=0.):
         """
         Naive optimization of the Expected improvement
         This function uses a trivial grid evaluation across the search space
@@ -181,7 +183,7 @@ class BayesianOptimizer:
                               steps=int(self.search_space[1] - \
                                         self.search_space[0] * precision))
 
-        u = self.expected_improvement(lamb, eps=0)
+        u = self.expected_improvement(lamb, eps=eps)
 
         # find lamb* = argmax_{lamb} u(lamb)
         argmax = u.max(0)[1]
@@ -214,7 +216,7 @@ class BayesianOptimizer:
         lamb.data = lamb
         return lamb
 
-    def optimize(self):
+    def optimize(self, eps=0., initial_lamb=None):
         """
         Execute the bayesian optimization on the closure.
 
@@ -234,9 +236,25 @@ class BayesianOptimizer:
 
         return arg_min_λ c(λ^(t)) from {λ_t}_t=1 ^T
         the return value is called the INCUMBENT
+
+        :param eps:
+        :param initial_lamb: torch.Tensor. optional initial guess. Default
+        is sampling a value uniformly from the search space.
         """
 
+        # initialize D^(0)
+        if initial_lamb is None:
+            self.inquired[0] = td.Uniform(*self.search_space).sample([1])
+        else:
+            self.inquired[0] = initial_lamb
+
+        self.cost[0] = self.closure(self.inquired[0])
+        self.incumbent = self.inquired[0]
+        self.inc_idx = 0
+
+        # optimize using the budget
         for t in range(1, self.budget + 1):
+            print('Current incumbent: {} '.format(self.incumbent))
             # Fit predictive model
             # TODO find a third party implementation, that allows online
             #  computation (adding new values rather than creating an
@@ -244,13 +262,14 @@ class BayesianOptimizer:
             self.gaussian_process(X=self.inquired[:t], y=self.cost[:t])
 
             # select next point to query
-            lamb = self.max_ei(precision=50)
+            lamb = self.max_ei(precision=50, eps=eps)
             self.inquired[t] = lamb
 
             # plot the gp + acquisition function
-            # self.bo_plot(X=self.inquired[:t],
-            #              y=self.cost[:t],
-            #              acquisition=True)
+            # TODO write out plot for t > 1
+            self.bo_plot(X=self.inquired[:t],
+                         y=self.cost[:t],
+                         acquisition=True)
 
             # Query cost function
             self.cost[t] = self.closure(lamb)
@@ -260,5 +279,5 @@ class BayesianOptimizer:
                 (self.incumbent, self.inc_idx, self.cost[self.inc_idx]),
                 (lamb.data, t, self.cost[t])],
                 key=lambda x: x[2])
-
+        print()
         return self.incumbent
