@@ -13,6 +13,9 @@ class Test_ResidualBlock(unittest.TestCase):
         return len([l for l in model.layers if isinstance(l, nn.Conv2d)])
 
     def setUp(self) -> None:
+
+        # TODO instead of loading these arrays, consider creating random
+        #  tensors.
         os.chdir("..")
         os.getcwd()
         root_data = 'Data/Raw/'
@@ -25,12 +28,58 @@ class Test_ResidualBlock(unittest.TestCase):
         print('train_shape', self.x_train.shape)
 
     def test_forward_dimensions(self):
+        """Test, that the forward path produces the expected shape"""
         residblock = ResidualBlock(
             cunits=(1, 64, 64, 128),
             kernel_size=3)
 
         self.assertEqual(residblock.forward(self.x_train[:1]).shape, \
                          torch.Size([1, 128, 28, 28]))
+
+    def test_naive_training(self):
+        """run residblock model on two images and check, that the weights
+        change & gradients are non zero"""
+        from torch.utils.data import TensorDataset, DataLoader
+        from torch.optim import Adam
+        from copy import deepcopy
+
+        batch_size = 1
+        x_train = torch.rand([2, 1, 28, 28])
+        y_train = torch.rand([2, 8, 28, 28])
+
+        trainset = TensorDataset(x_train, y_train)
+        trainloader = DataLoader(trainset, batch_size=batch_size,
+                                 shuffle=True, num_workers=1)
+        residblock = ResidualBlock(
+            cunits=(1, 8, 8),
+            kernel_size=3)
+
+        # # hard coded forward bath
+        # train_iter = iter(trainloader)
+        # x, y = next(train_iter)
+        #
+        # y_hat = residblock.layers[0].forward(x) # conv
+        # y_hat = residblock.layers[1].forward(y_hat) # bn
+        # y_hat = residblock.layers[2].forward(y_hat) # relu
+        # y_hat = residblock.layers[3].forward(y_hat) # conv
+        # y_hat = residblock.layers[4].forward(y_hat) # bn
+        # y_hat += residblock.layers[5].forward(x) # identity or 1x1
+        # y_hat = residblock.layers[6].forward(y_hat)
+        #
+        # self.assertTrue(torch.equal(y_hat, residblock.forward(x)))
+
+        state0 = deepcopy(residblock.state_dict())
+        optimizer = Adam(residblock.parameters(), lr=0.005)
+        loss_fn = nn.MSELoss()
+        for img, label in trainloader:
+            optimizer.zero_grad()
+            loss = loss_fn(residblock.forward(img), label)
+            loss.backward()
+            optimizer.step()
+
+            for name, p in residblock.named_parameters():
+                msg = '{}\'s grad is None still.'
+                self.assertIsNotNone(p.grad, msg.format(name))
 
     def test_no_of_convolutions(self):
         """check that the scalable residblock actually has the appropriate
@@ -53,6 +102,8 @@ class Test_ResidualBlock(unittest.TestCase):
                          'number of convolutions are incorrect')
 
     def test_cunits_placed_to_convs(self):
+        """check that the cunits argument is translated to the appropriate
+        amount of channels in the respective convolutions"""
         residblock = ResidualBlock(
             cunits=(1, 2, 3),
             kernel_size=3)

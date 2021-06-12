@@ -79,6 +79,25 @@ class Test_ResidualBlock(unittest.TestCase):
         self.assertEqual(resnet(torch.ones((1, 1, 28, 28))).shape,
                          torch.Size([1, 10]))
 
+    def test_naive_training(self):
+        """check the model trains; the gradients & weights change after one
+        training step"""
+        from torch.utils.data import TensorDataset, DataLoader
+        from torch.optim import Adam
+        from copy import deepcopy
 
+        batch_size = 1
+        x_train = torch.rand([2, 1, 28, 28])
+        y_train = torch.randint(0, 10, size=(2, 1))
+
+        trainset = TensorDataset(x_train, y_train)
+        trainloader = DataLoader(trainset, batch_size=batch_size,
+                                 shuffle=True, num_workers=1)
+
+
+
+
+        # for img, label in trainloader:
+        #     optimizer.zero_grad()
 if __name__ == '__main__':
     unittest.main(exit=False)

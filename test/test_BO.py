@@ -3,6 +3,11 @@ import torch
 import torch.distributions as td
 from src.BO import BayesianOptimizer
 
+import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use('TkAgg')
+
 
 class Test_BO(unittest.TestCase):
 
@@ -23,16 +28,11 @@ class Test_BO(unittest.TestCase):
                torch.exp(-(x - 6) ** 2 / 10) + \
                1 / (x ** 2 + 1)
 
-    def test_gp(self):
-        import matplotlib.pyplot as plt
-        import matplotlib
-
-        matplotlib.use('TkAgg')
-        xs = torch.linspace(-2, 10, 10000)
+    def test_bo_on_explicit_function(self):
+        # # plotting the exemplary function
+        # xs = torch.linspace(-2, 10, 10000)
         # plt.plot(xs, Test_BO.f(xs))
         # plt.show()
-
-
 
         lamb = td.Uniform(*(-5, 8)).sample([100])
         y = torch.tensor(
@@ -41,7 +41,7 @@ class Test_BO(unittest.TestCase):
 
         # plt.plot(lamb.numpy(), y.numpy(), 'kx')
 
-        bo = BayesianOptimizer(search_space=(-5, 8), budget=10,
+        bo = BayesianOptimizer(search_space=(-5, 8), budget=3,
                                closure=Test_BO.c)
 
         # X = td.Uniform(*(-5, 8)).sample([3])
@@ -49,8 +49,9 @@ class Test_BO(unittest.TestCase):
         # gpr = bo.gaussian_process(X=X, y=y)
         # bo.bo_plot(X, y, gpr, n_test=500, closure=Test_BO.c)
 
-        bo.optimize()
+        bo.optimize(eps=0.1)
 
+        # TODO write a viable test from this
         # self.assertEqual(True, False, msg='')
 
 
