@@ -37,19 +37,17 @@ class Test_ResidualBlock(unittest.TestCase):
                          torch.Size([1, 128, 28, 28]))
 
     def test_naive_training(self):
-        """run residblock model on two images and check, that the weights
-        change & gradients are non zero"""
+        """run residblock model on an image and check, that the weights
+        change & gradients are non zero + the same image has different
+        predictions before and after training for a single step."""
         from torch.utils.data import TensorDataset, DataLoader
         from torch.optim import Adam
         from copy import deepcopy
 
         batch_size = 1
-        x_train = torch.rand([2, 1, 28, 28])
-        y_train = torch.rand([2, 8, 28, 28])
+        x = torch.rand([1, 1, 28, 28])
+        y = torch.rand([1, 8, 28, 28])
 
-        trainset = TensorDataset(x_train, y_train)
-        trainloader = DataLoader(trainset, batch_size=batch_size,
-                                 shuffle=True, num_workers=1)
         residblock = ResidualBlock(
             cunits=(1, 8, 8),
             kernel_size=3)
@@ -69,17 +67,29 @@ class Test_ResidualBlock(unittest.TestCase):
         # self.assertTrue(torch.equal(y_hat, residblock.forward(x)))
 
         state0 = deepcopy(residblock.state_dict())
+        oldstate_prediction = residblock.forward(x)
+
         optimizer = Adam(residblock.parameters(), lr=0.005)
         loss_fn = nn.MSELoss()
-        for img, label in trainloader:
-            optimizer.zero_grad()
-            loss = loss_fn(residblock.forward(img), label)
-            loss.backward()
-            optimizer.step()
 
-            for name, p in residblock.named_parameters():
-                msg = '{}\'s grad is None still.'
-                self.assertIsNotNone(p.grad, msg.format(name))
+        # training step
+        optimizer.zero_grad()
+        loss = loss_fn(residblock.forward(x), y)
+        loss.backward()
+        optimizer.step()
+
+        msg = '{}\'s grad is None still.'
+        msg_weights = '{}\'s weights have not changed'
+        for name, p in residblock.named_parameters():
+            self.assertIsNotNone(p.grad, msg.format(name))
+            self.assertFalse(torch.allclose(p.data, state0[name]), msg_weights)
+
+        newstate_prediction = residblock.forward(x)
+        lossdiff = loss_fn(oldstate_prediction, newstate_prediction)
+
+        if torch.allclose(lossdiff, torch.tensor(0.)):
+            raise ValueError('The weights did not change during trainingstep')
+
 
     def test_no_of_convolutions(self):
         """check that the scalable residblock actually has the appropriate

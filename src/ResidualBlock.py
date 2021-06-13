@@ -1,7 +1,8 @@
+import torch
 import torch.nn as nn
 import itertools
 
-import torch
+
 class ResidualBlock(nn.Module):
     def __init__(self, cunits, kernel_size=3):
         """
@@ -82,7 +83,6 @@ class ResidualBlock(nn.Module):
             str(self.cunits), self.kernel_size)
 
         sublayers = '\n\t'.join([str(l) for l in self.layers[:-2]])
-
         skip = '\n\t'.join([str(l) for l in self.layers[-2:]])
 
         return '{}\n\t---scaled block---\n\t{}\n\t---skip connection' \
@@ -97,41 +97,3 @@ class ResidualBlock(nn.Module):
 
         # relu(X+ ident(X_skip) or  relu(X+ conv1x1(X_skip).
         return self.layers[-1](x + self.layers[-2](xskip))
-
-if __name__ == '__main__':
-
-    # TODO move this to unittests.
-    from torch.utils.data import TensorDataset, DataLoader
-    from torch.optim import Adam
-    from copy import deepcopy
-
-    batch_size = 1
-    x_train = torch.rand([2, 1, 28, 28])
-    y_train = torch.rand([2, 8, 28, 28])
-
-    trainset = TensorDataset(x_train, y_train)
-    trainloader = DataLoader(trainset, batch_size=batch_size,
-                             shuffle=True, num_workers=1)
-    residblock = ResidualBlock(
-        cunits=(1, 8, 8),
-        kernel_size=3)
-
-    # hard coded forward bath
-    train_iter = iter(trainloader)
-    x, y = next(train_iter)
-
-
-    state0 = deepcopy(residblock.state_dict())
-    optimizer = Adam(residblock.parameters(), lr=0.005)
-    loss_fn = nn.MSELoss()
-    for img, label in trainloader:
-        optimizer.zero_grad()
-        loss = loss_fn(residblock.forward(img), label)
-        loss.backward()
-        optimizer.step()
-
-        for name, p in residblock.named_parameters():
-            msg = '{}\'s grad is None still.'
-
-            if p.grad is None:
-                print(msg.format(name))

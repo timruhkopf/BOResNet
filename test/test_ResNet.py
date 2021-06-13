@@ -44,10 +44,10 @@ class Test_ResidualBlock(unittest.TestCase):
                          torch.Size([1, 10]))
 
     def test_scaling_architechture(self):
-        """check different architechtures incl. irregular sized residblocks
+        """check different architechtures incl. irregular sized resnets
         and differently sized channels work as well."""
         # using a different net to the ones used in
-        # test_architechture_scaling_data (more residblocks skip=2 & halved
+        # test_architechture_scaling_data (more resnets skip=2 & halved
         # no. of channels.
         resnet = ResNet(
             img_size=(28, 28),
@@ -80,24 +80,49 @@ class Test_ResidualBlock(unittest.TestCase):
                          torch.Size([1, 10]))
 
     def test_naive_training(self):
-        """check the model trains; the gradients & weights change after one
-        training step"""
-        from torch.utils.data import TensorDataset, DataLoader
+        """run resnet model on an image and check, that the weights
+        change & gradients are non zero + the same image has different
+        predictions before and after training for a single step.
+        Notice, that here MSE loss and not CrossEntropy loss is used.
+        This is out of mere convenience."""
+        import torch.nn as nn
         from torch.optim import Adam
         from copy import deepcopy
 
-        batch_size = 1
-        x_train = torch.rand([2, 1, 28, 28])
-        y_train = torch.randint(0, 10, size=(2, 1))
+        x = torch.rand([1, 1, 28, 28])
+        y = torch.rand([1, 10])
 
-        trainset = TensorDataset(x_train, y_train)
-        trainloader = DataLoader(trainset, batch_size=batch_size,
-                                 shuffle=True, num_workers=1)
+        resnet = ResNet(
+            img_size=(28, 28),
+            architecture=((1, 32), (32, 32, 32), (32, 32, 32, 32),
+                          (32, 64, 64)),
+            no_classes=10)
+        state0 = deepcopy(resnet.state_dict())
+        oldstate_prediction = resnet.forward(x)
+
+        optimizer = Adam(resnet.parameters(), lr=0.005)
+        loss_fn = nn.MSELoss()
+
+        # training step
+        optimizer.zero_grad()
+        loss = loss_fn(resnet.forward(x), y)
+        loss.backward()
+        optimizer.step()
+
+        msg = '{}\'s grad is None still.'
+        msg_weights = '{}\'s weights have not changed'
+        for name, p in resnet.named_parameters():
+            self.assertIsNotNone(p.grad, msg.format(name))
+            self.assertFalse(torch.allclose(p.data, state0[name]), msg_weights)
+
+        newstate_prediction = resnet.forward(x)
+        lossdiff = loss_fn(oldstate_prediction, newstate_prediction)
+
+        if torch.allclose(lossdiff, torch.tensor(0.)):
+            raise ValueError('The weights did not change during trainingstep')
+
+        print('finished training')
 
 
-
-
-        # for img, label in trainloader:
-        #     optimizer.zero_grad()
 if __name__ == '__main__':
     unittest.main(exit=False)
