@@ -6,11 +6,13 @@ import matplotlib
 
 from src.ResNet import ResNet
 from src.utils import load_npz_kmnist, plot_kmnist
+from src.RUNS import RUNS
+from src.BO import BayesianOptimizer
 
 matplotlib.use('TkAgg')
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-batch_size = 2
+batch_size = 10
 
 # (0) loading data & preporcessing according to
 # https://github.com/rois-codh/kmnist/blob/master/benchmarks/kuzushiji_mnist_cnn.py
@@ -22,10 +24,12 @@ x_train, x_test, y_train, y_test = load_npz_kmnist(
            'kmnist-train-labels.npz', 'kmnist-test-labels.npz'])
 
 # testing if training starts at all
-x_train = x_train[:100]
-y_train = y_train[:100]
-x_test = x_test[:100]
-y_test = y_test[:100]
+# FIXME: change this back to the full dataset!
+n = 10000  # len(x_train)
+x_train = x_train[:n]
+y_train = y_train[:n]
+x_test = x_test[:int(n/10)]
+y_test = y_test[:int(n/10)]
 
 # plot an example image
 # plot_kmnist(x_train, y_train,
@@ -37,8 +41,12 @@ x_train /= 255.
 x_test /= 255.
 
 # make y's 1d vector single examples by adding a dimension
-y_train = torch.unsqueeze(y_train, dim=1)
-y_test = torch.unsqueeze(y_test, dim=1)
+# y_train = torch.unsqueeze(y_train, dim=1)
+# y_test = torch.unsqueeze(y_test, dim=1)
+
+# convert y float to int
+y_train = y_train.type(torch.LongTensor)
+y_test = y_test.type(torch.LongTensor)
 
 # add channel information (greyscale image)
 x_train = torch.unsqueeze(x_train, dim=1)
@@ -56,6 +64,9 @@ trainloader = DataLoader(trainset, batch_size=batch_size,
 testloader = DataLoader(testset, batch_size=batch_size,
                         shuffle=True, num_workers=1)
 
+# iterable = testloader.__iter__()
+# x, y = next(iterable)
+
 # setup the model
 # skip = 2
 # resnet9 = ResNet(
@@ -66,20 +77,34 @@ testloader = DataLoader(testset, batch_size=batch_size,
 
 resnet3 = ResNet(
     img_size=(28, 28),
-    architecture=((1, 8), (8, 8, 8)),
+    architecture=((1, 8), (8, 8, 8), (8, 16, 16)),
     no_classes=10)
 
-resnet3.to(device)
+# resnet3.to(device)
 
-iterloader = iter(testloader)
-images, labels = next(iterloader)
+# create, track & run a model with sgd under a specific learning rate
+runs = RUNS(resnet3, trainloader, testloader, epochs=2)
+# runs.evaluate_model_with_SGD(lr=0.001)
+# runs.evaluate_model_with_SGD(lr=0.005)
+# runs.evaluate_model_with_SGD(lr=0.003)
 
 
+# pass closure object to BO
+bo = BayesianOptimizer(search_space=(0.001, 0.01),
+                       budget=3,  # FIXME: change this
+                       closure=runs.evaluate_model_with_SGD)
+bo.optimize(eps=0., initial_lamb=0.03)
+print()
 
-runs = RUNS(resnet3, testloader, epochs=1)
 
-# TODO write a closure to evaluate optimized resnet on D_validation --> in
-#  order to calculate the cost function in BO.
-runs.evaluate_model_with_SGD(lr=0.001)
+# TODO write out the BO images & check for single run on entire dataset,
+#  multiple epochs
+# deprec
+import matplotlib.pyplot as plt
 
-# pass runs.evaluate_model_with_SGD to BO's closure argument
+plt.plot(runs.trainlosses[0].detach().numpy())
+
+bo.inquired
+runs.lrs
+
+# TODO: check that proposed !!!!!

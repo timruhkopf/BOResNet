@@ -13,7 +13,6 @@ import matplotlib
 
 matplotlib.use('TkAgg')
 
-
 pyro.set_rng_seed(0)
 
 
@@ -32,6 +31,10 @@ class BayesianOptimizer:
         #  of SGD with a specific learning rate!
         self.budget = budget - 1
         self.closure = closure
+
+        if search_space[0] > search_space[1]:
+            raise ValueError('Searchspace Argument order is not correct: ('
+                             'lower, upper)')
         self.search_space = search_space
 
         # sample the first data point at random.
@@ -168,20 +171,19 @@ class BayesianOptimizer:
 
         return u
 
-    def max_ei(self, precision=50, eps=0.):
+    def max_ei(self, precision=200, eps=0.):
         """
         Naive optimization of the Expected improvement
         This function uses a trivial grid evaluation across the search space
         and evaluates self.expected_improvement for each of these grid points.
         lastly, it returns lamb* = argmax_{lamb} u(lamb).
 
-        :param precision: number of EI evaluations per distance unit of the 1d
+        :param precision: number of evenly spaced EI evaluations on the
         search space.
         :returns the maximum value of the current EI function
         """
         lamb = torch.linspace(*self.search_space,
-                              steps=int(self.search_space[1] - \
-                                        self.search_space[0] * precision))
+                              steps=precision)
 
         u = self.expected_improvement(lamb, eps=eps)
 
@@ -248,7 +250,8 @@ class BayesianOptimizer:
         else:
             self.inquired[0] = initial_lamb
 
-        self.cost[0] = self.closure(self.inquired[0])
+        # fixme: this saves array object to the list!
+        self.cost[0] = self.closure(float(self.inquired[0].numpy()))
         self.incumbent = self.inquired[0]
         self.inc_idx = 0
 
@@ -262,7 +265,8 @@ class BayesianOptimizer:
             self.gaussian_process(X=self.inquired[:t], y=self.cost[:t])
 
             # select next point to query
-            lamb = self.max_ei(precision=50, eps=eps)
+            # TODO move precision to arguments
+            lamb = self.max_ei(precision=200, eps=eps)
             self.inquired[t] = lamb
 
             # plot the gp + acquisition function
@@ -272,7 +276,7 @@ class BayesianOptimizer:
                          acquisition=True)
 
             # Query cost function
-            self.cost[t] = self.closure(lamb)
+            self.cost[t] = self.closure(lamb.data.numpy()[0])
 
             # replace the incumbent if necessary
             self.incumbent, self.inc_idx, _ = min([

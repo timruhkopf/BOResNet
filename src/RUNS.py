@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.optim import SGD
 
+import matplotlib.pyplot as plt
+
 
 class RUNS:
     def __init__(self, model, trainloader, testloader, epochs):
@@ -22,6 +24,9 @@ class RUNS:
 
         # track the information
         self.trainlosses = []
+        self.lrs = []
+        self.costs = []
+        self.acc = []
 
     def evaluate_model_with_SGD(self, lr):
         """
@@ -35,13 +40,24 @@ class RUNS:
         """
         optimizer = SGD(self.model.parameters(), lr=lr)
         loss_fn = nn.CrossEntropyLoss()
-        self.trainlosses.append([torch.zeros(len(self.trainloader))])
+
+        # pre-allocate a loss tensor for the current run
+        # both for plotting purposes
+        self.trainlosses.append(torch.zeros(int(
+            len(self.trainloader.dataset) *
+            self.epochs / self.trainloader.batch_size)))
+        self.lrs.append(lr)
+
+        # before training cost
+        # DEPREC
+        # cost_before = self.test()
 
         self.train(optimizer, loss_fn)
-        return self.test()  # == cost
+        cost = self.test()
+        # print(cost)  # Deprec
+        return cost
 
     def train(self, optimizer, loss_fn):
-
         for epoch in range(self.epochs):
             for i, (images, labels) in enumerate(self.trainloader):
                 # images.to(device)
@@ -53,23 +69,35 @@ class RUNS:
 
                 loss.backward()
                 optimizer.step()
-                self.trainlosses[-1][i] = loss.sum()
+                train_idx = int(i + len(self.trainloader) * epoch)
+                self.trainlosses[-1][train_idx] = loss
 
-        print('Finished Training')
+        # deprec
+        # plt.plot(self.trainlosses[-1].detach().numpy())
+
+        print('Finished training')
 
     def test(self):
         # evaluate the cost function on D^test
         cost = torch.tensor([0.])
         # test_acc = torch.tensor([0.])
+        loss_fn = nn.CrossEntropyLoss()
+        test_acc = torch.tensor(0.)
         with torch.no_grad():
             for images, labels in self.testloader:
                 y_pred = self.model.forward(images)
-                cost += nn.CrossEntropyLoss(y_pred, labels)
 
-                # TODO add metrics such as accuracy on test data
-                # _, prediction = torch.max(y_pred.data, 1)
-                # test_acc += torch.sum(prediction == labels.data)
+                # TODO metric only for testing
+                cost += loss_fn(y_pred, labels)
 
-        # test_acc = test_acc / len(dataset)
-        print('Finished Testing')
+                # accuracy on test data
+                _, prediction = torch.max(y_pred.data, 1)
+                test_acc += torch.sum(prediction == labels.data)
+
+            test_acc = test_acc / len(self.testloader)
+        self.acc.append(test_acc)
+
+        print('Finished testing')
+
+        self.costs.append(cost)
         return cost
