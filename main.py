@@ -80,11 +80,23 @@ resnet3 = ResNet(
     architecture=((1, 8), (8, 8, 8), (8, 16, 16)),
     no_classes=10)
 
+#
+# resnet9 = ResNet(
+#     img_size=(28, 28),
+#     architecture=((1, 16), (16, 16, 16), (16, 16, 16), (32, 32, 32),
+#                   (32, 32, 32), (32,64,64),
+#     no_classes=10)
+
 # resnet3.to(device)
 
 # create, track & run a model with sgd under a specific learning rate
-runs = RUNS(resnet3, trainloader, testloader, epochs=2)
-# runs.evaluate_model_with_SGD(lr=0.001)
+root = os.getcwd()
+runs = RUNS(resnet3, trainloader, testloader, epochs=2,
+            path=root + '/models/run1/model_')
+
+
+
+runs.evaluate_model_with_SGD(lr=0.001)
 # runs.evaluate_model_with_SGD(lr=0.005)
 # runs.evaluate_model_with_SGD(lr=0.003)
 

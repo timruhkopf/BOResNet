@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 from torch.optim import SGD
-
-from copy import deepcopy
+import datetime
 
 
 class RUNS:
-    def __init__(self, model, trainloader, testloader, epochs):
+    def __init__(self, model, trainloader, testloader, epochs, path=None):
         """
         RUN is class to gather all the information across Individual
         Calls to evaluate_model_with_SGD.
@@ -16,6 +15,8 @@ class RUNS:
         :param trainloader:
         :param testloader:
         :param epochs: int. No. of cycles through trainloader
+        :param path: str. path to a folder/modelbase name, i.e. all models are
+        saved to this folder using the modelbase name and a time stamp.
         """
         self.model = model
         self.trainloader = trainloader
@@ -27,7 +28,8 @@ class RUNS:
         self.lrs = []
         self.costs = []
         self.acc = []
-        self.state = []
+
+        self.path = path
 
     def evaluate_model_with_SGD(self, lr):
         """
@@ -49,18 +51,17 @@ class RUNS:
             self.epochs / self.trainloader.batch_size)))
         self.lrs.append(lr)
 
-        # before training cost
-        # DEPREC
-        # cost_before = self.test()
-
         self.train(optimizer, loss_fn)
         cost = self.test()
-        # print(cost)  # Deprec
 
         # save the state of the model & reset the parameters
-        self.state.append(deepcopy(self.model.state_dict()))
-        self.model.reset_parameters()
+        # ensuring independent initialisation & model "realisations"
+        if self.path is not None:
+            timestamp = '{:%Y%m%d_%H%M%S}'.format(
+                datetime.datetime.now())
+            torch.save(self.model.state_dict(), self.path + timestamp)
 
+        self.model.reset_parameters()
         return cost
 
     def train(self, optimizer, loss_fn):
