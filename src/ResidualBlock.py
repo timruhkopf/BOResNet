@@ -97,3 +97,8 @@ class ResidualBlock(nn.Module):
 
         # relu(X+ ident(X_skip) or  relu(X+ conv1x1(X_skip).
         return self.layers[-1](x + self.layers[-2](xskip))
+
+    def reset_parameters(self):
+        for layer in self.layers:
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()

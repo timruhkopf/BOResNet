@@ -1,8 +1,8 @@
 import torch
-
 from torch.utils.data import TensorDataset, DataLoader
 
 import matplotlib
+import os
 
 from src.ResNet import ResNet
 from src.utils import load_npz_kmnist, plot_kmnist
@@ -25,7 +25,7 @@ x_train, x_test, y_train, y_test = load_npz_kmnist(
 
 # testing if training starts at all
 # FIXME: change this back to the full dataset!
-n = 10000  # len(x_train)
+n = 100  # len(x_train)
 x_train = x_train[:n]
 y_train = y_train[:n]
 x_test = x_test[:int(n/10)]
@@ -91,9 +91,13 @@ runs = RUNS(resnet3, trainloader, testloader, epochs=2)
 
 # pass closure object to BO
 bo = BayesianOptimizer(search_space=(0.001, 0.01),
-                       budget=3,  # FIXME: change this
+                       budget=5,  # FIXME: change this
                        closure=runs.evaluate_model_with_SGD)
-bo.optimize(eps=0., initial_lamb=0.03)
+bo.optimize(eps=0., initial_lamb=0.003)
+
+root = os.getcwd()
+bo.fig.legend() # FIXME: add legend to the plot
+bo.fig.savefig(root +"/Plots/bo_run1.pdf", bbox_inches='tight')
 print()
 
 

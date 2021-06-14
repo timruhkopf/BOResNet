@@ -1,15 +1,19 @@
 import unittest
 import torch
-# import torch.nn as nn
-# from src.utils import load_npz_kmnist
-# import os
-
+import torch.nn as nn
+from torch.optim import Adam
+from copy import deepcopy
 from src.ResNet import ResNet
 
 
 class Test_ResidualBlock(unittest.TestCase):
 
     # def setUp(self) -> None:
+    #     """Use real world data during training"""
+    #     import torch.nn as nn
+    #     from src.utils import load_npz_kmnist
+    #     import os
+    #
     #     os.chdir("..")
     #     os.getcwd()
     #     root_data = 'Data/Raw/'
@@ -85,9 +89,6 @@ class Test_ResidualBlock(unittest.TestCase):
         predictions before and after training for a single step.
         Notice, that here MSE loss and not CrossEntropy loss is used.
         This is out of mere convenience."""
-        import torch.nn as nn
-        from torch.optim import Adam
-        from copy import deepcopy
 
         x = torch.rand([1, 1, 28, 28])
         y = torch.rand([1, 10])
@@ -121,7 +122,34 @@ class Test_ResidualBlock(unittest.TestCase):
         if torch.allclose(lossdiff, torch.tensor(0.)):
             raise ValueError('The weights did not change during trainingstep')
 
+        for (name0, p0), (name1, p1) in \
+                zip(state0.items(), resnet.state_dict().items()):
+
+            if torch.allclose(p0, p1):
+                raise ValueError('Weight tensors {} & {} are the same after '
+                                 'training'.format(name0, name1))
+
         print('finished training')
+
+    # def test_reset_parameters(self):
+    #     """check that reset method actually changes the weights and biases
+    #     of all parameters of the model"""
+    #     resnet = ResNet(
+    #         img_size=(28, 28),
+    #         architecture=((1, 32), (32, 32, 32), (32, 32, 32, 32),
+    #                       (32, 64, 64)),
+    #         no_classes=10)
+    #
+    #     state0 = deepcopy(resnet.state_dict())
+    #     resnet.reset_parameters()
+    #     state1 = deepcopy(resnet.state_dict())
+    #
+        #     # TODO BE CAREFULL BN has weights and biasses that do not change,
+        #     #  if the model was not trainied!
+        #     #  ASK if the weights & biases of nn.conv & nn.linear have changed!!
+        #     change = [(name, torch.allclose(p0, p)) for (name, p0), p in
+        #               zip(state0.items(), state1.values()) \
+        #               if 'weight' in name or 'bias' in name]
 
 
 if __name__ == '__main__':

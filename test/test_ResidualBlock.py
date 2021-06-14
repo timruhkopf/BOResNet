@@ -1,10 +1,12 @@
 import unittest
 import torch
 import torch.nn as nn
-from src.utils import load_npz_kmnist
+
 import os
+from copy import deepcopy
 
 from src.ResidualBlock import ResidualBlock
+from src.utils import load_npz_kmnist
 
 
 class Test_ResidualBlock(unittest.TestCase):
@@ -90,7 +92,6 @@ class Test_ResidualBlock(unittest.TestCase):
         if torch.allclose(lossdiff, torch.tensor(0.)):
             raise ValueError('The weights did not change during trainingstep')
 
-
     def test_no_of_convolutions(self):
         """check that the scalable residblock actually has the appropriate
         number of convolutions."""
@@ -124,6 +125,23 @@ class Test_ResidualBlock(unittest.TestCase):
 
         # notice that the 1x1 convolution on the skip applies with (1,3)
         self.assertEqual(channels, [(1, 2), (2, 3), (1, 3)])
+
+    # def test_reset_parameters(self):
+    #     """check that all weights and biases are resampled"""
+    #     residblock = ResidualBlock(
+    #         cunits=(1, 2, 3),
+    #         kernel_size=3)
+    #
+    #     state0 = deepcopy(residblock.state_dict())
+    #     residblock.reset_parameters()
+    #     state1 = deepcopy(residblock.state_dict())
+    #
+    #     # TODO BE CAREFULL BN has weights and biasses that do not change,
+    #     #  if the model was not trainied!
+    #     #  ASK if the weights & biases of nn.conv & nn.linear have changed!!
+    #     change = [(name, torch.allclose(p0, p)) for (name, p0), p in
+    #               zip(state0.items(), state1.values()) \
+    #               if 'weight' in name or 'bias' in name]
 
 
 if __name__ == '__main__':

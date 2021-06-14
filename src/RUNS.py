@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.optim import SGD
 
-import matplotlib.pyplot as plt
+from copy import deepcopy
 
 
 class RUNS:
@@ -27,6 +27,7 @@ class RUNS:
         self.lrs = []
         self.costs = []
         self.acc = []
+        self.state = []
 
     def evaluate_model_with_SGD(self, lr):
         """
@@ -55,6 +56,11 @@ class RUNS:
         self.train(optimizer, loss_fn)
         cost = self.test()
         # print(cost)  # Deprec
+
+        # save the state of the model & reset the parameters
+        self.state.append(deepcopy(self.model.state_dict()))
+        self.model.reset_parameters()
+
         return cost
 
     def train(self, optimizer, loss_fn):

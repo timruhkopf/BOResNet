@@ -59,3 +59,8 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
+
+    def reset_parameters(self):
+        for layer in self.layers:
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
