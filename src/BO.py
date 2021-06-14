@@ -9,14 +9,8 @@ import pyro.distributions as dist
 
 from math import pi
 import matplotlib.pyplot as plt
-import matplotlib
-
-matplotlib.use('TkAgg')
-
-pyro.set_rng_seed(0)
 
 
-# TODO Seeding
 class BayesianOptimizer:
     def __init__(self, search_space, budget, closure):
         """
@@ -46,6 +40,7 @@ class BayesianOptimizer:
         self.fig, self.axes = plt.subplots(self.budget, 1, sharex=True)
         title = 'Bayesian Optimization for steps 2-{}'
         self.fig.suptitle(title.format(budget))
+        self.fig_handle = {}
 
         for ax in self.axes:
             ax.set_xlim(*search_space)
@@ -115,6 +110,9 @@ class BayesianOptimizer:
         selected point of inquiry (max. expected improvement) and the
         currently observed points.
 
+        Notice, that in order to create a single legend,
+        this approach (https://stackoverflow.com/a/43940144) is utilized.
+
         :param X: torch.Tensor.
         :param y: torch.Tensor.
         :param ax: matplotlib axes to plot on.
@@ -125,9 +123,8 @@ class BayesianOptimizer:
         function, if known. Mainly for testing purposes.
         :return: None, changes self.axes inplace.
         """
-        # plt.figure(figsize=(12, 6))
         # plot the datapoints
-        ax.plot(X.numpy(), y.numpy(), 'kx')
+        obs = ax.plot(X.numpy(), y.numpy(), 'kx', label='Observed')
 
         # generate points at which gp is evaluated at for plotting
         Xtest = torch.linspace(*self.search_space, n_test)
@@ -137,27 +134,54 @@ class BayesianOptimizer:
         # compute predictive mean and variance for each of these points
         with torch.no_grad():
             mean, cov = self.gpr_t(Xtest, full_cov=True, noiseless=False)
+
             # standard deviation at each input point x (testpoints)
             sd = cov.diag().sqrt()
 
         # plot the mean prediction
-        ax.plot(Xtest.numpy(), mean.numpy(), 'r', lw=2)
+        gp_mean = ax.plot(
+            Xtest.numpy(), mean.numpy(), 'r',
+            label='GP mean', lw=2)
 
         # plot the two-sigma uncertainty about the mean
-        ax.fill_between(Xtest.numpy(),
-                        # "confidence-bands"
-                        (mean - 2.0 * sd).numpy(),
-                        (mean + 2.0 * sd).numpy(),
-                        color='C0', alpha=0.3)
+        gp_sigma = ax.fill_between(
+            Xtest.numpy(),
+            # "confidence-bands"
+            (mean - 2.0 * sd).numpy(),
+            (mean + 2.0 * sd).numpy(),
+            label='GP +/-2 * sd', color='C0', alpha=0.3)
 
         if acquisition:
-            ax.plot(Xtest.numpy(), self.expected_improvement(Xtest, eps=0))
+            ei = ax.plot(
+                Xtest.numpy(),
+                self.expected_improvement(Xtest, eps=0),
+                label='EI')
 
             # TODO cache that value rather than recompute!
             next_lamb = self.max_ei(precision=50)
-            ax.plot(next_lamb.numpy(),
-                    self.expected_improvement(next_lamb, eps=0).numpy(),
-                    'v')
+            ei_max = ax.plot(
+                next_lamb.numpy(),
+                self.expected_improvement(next_lamb, eps=0).numpy(),
+                'v', label='EI max')
+
+        # create (unique) handles for the legend
+        # TODO move this to this functions decorator to execute only
+        #  at first execution
+        labels = ['Observed', 'gp mean', 'gp 2*sigma', 'EI', 'EI max']
+        ax_obj = [obs, gp_mean, gp_sigma, ei, ei_max]
+        if not bool(self.fig_handle):
+            # only fill fig_handle in the first bo_plot call
+            for name, axs in zip(labels, ax_obj):
+                if isinstance(axs, list):
+                    self.fig_handle[name] = axs[0]
+                else:
+                    self.fig_handle[name] = axs
+
+            # add legend to first ax
+            ax.legend(handles=self.fig_handle.values())
+
+        # TODO: cant i simply use the first ax and attach only to it the
+        #  legend?
 
     def expected_improvement(self, lamb, eps=0.):
         """
@@ -300,5 +324,5 @@ class BayesianOptimizer:
                 (self.incumbent, self.inc_idx, self.cost[self.inc_idx]),
                 (lamb.data, t, self.cost[t])],
                 key=lambda x: x[2])
-        print()
+
         return self.incumbent
