@@ -41,6 +41,15 @@ class BayesianOptimizer:
         self.inquired = torch.zeros(budget)
         self.cost = torch.zeros(budget)
 
+        # plot preallocation to gather info along the way rather than
+        # recomputing it
+        self.fig, self.axes = plt.subplots(self.budget, 1, sharex=True)
+        title = 'Bayesian Optimization for steps 2-{}'
+        self.fig.suptitle(title.format(budget))
+
+        for ax in self.axes:
+            ax.set_xlim(*search_space)
+
     def gaussian_process(self, X, y, num_steps=2000, noise=0.):
         """
         fit the Gaussian process to the observed data <X, y>.
@@ -68,6 +77,7 @@ class BayesianOptimizer:
         self.gpr_t = gp.models.GPRegression(X, y, kernel,
                                             noise=torch.tensor(noise),
                                             jitter=1e-5)
+        # TODO consider storing the gprs (for debug purposes)
 
         # note that our priors have support on the positive reals
         self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(
@@ -95,28 +105,34 @@ class BayesianOptimizer:
                                  self.gpr_t.kernel.lengthscale.item(),
                                  self.gpr_t.noise.item()))
 
-    def bo_plot(self, X, y, acquisition=False, n_test=500,
+    def bo_plot(self, X, y, ax, acquisition=True, n_test=500,
                 closure=None):
         """
+        Plotting the BO process' current iteration.
+
+        incl. the costs' approximation using a Gaussian Process, the
+        corresponding expected improvement acquisition function, the next
+        selected point of inquiry (max. expected improvement) and the
+        currently observed points.
 
         :param X: torch.Tensor.
         :param y: torch.Tensor.
+        :param ax: matplotlib axes to plot on.
         :param n_test: int. Number of points for plotting the function.
+        :param acquisition: boolean, indicating as to whether the
+        acquisition function and its max value shall be plotted.
         :param closure: callable. This allows to plot the true cost
-        function, if known.
-        :return:
+        function, if known. Mainly for testing purposes.
+        :return: None, changes self.axes inplace.
         """
-
-        # TODO beautify plot: legend, title, axis
-        # TODO save plots
-        plt.figure(figsize=(12, 6))
+        # plt.figure(figsize=(12, 6))
         # plot the datapoints
-        plt.plot(X.numpy(), y.numpy(), 'kx')
+        ax.plot(X.numpy(), y.numpy(), 'kx')
 
         # generate points at which gp is evaluated at for plotting
         Xtest = torch.linspace(*self.search_space, n_test)
         if closure is not None:
-            plt.plot(Xtest.numpy(), closure(Xtest.numpy()))
+            ax.plot(Xtest.numpy(), closure(Xtest.numpy()))
 
         # compute predictive mean and variance for each of these points
         with torch.no_grad():
@@ -125,26 +141,23 @@ class BayesianOptimizer:
             sd = cov.diag().sqrt()
 
         # plot the mean prediction
-        plt.plot(Xtest.numpy(), mean.numpy(), 'r', lw=2)
+        ax.plot(Xtest.numpy(), mean.numpy(), 'r', lw=2)
 
         # plot the two-sigma uncertainty about the mean
-        plt.fill_between(Xtest.numpy(),
-                         # "confidence-bands"
-                         (mean - 2.0 * sd).numpy(),
-                         (mean + 2.0 * sd).numpy(),
-                         color='C0', alpha=0.3)
+        ax.fill_between(Xtest.numpy(),
+                        # "confidence-bands"
+                        (mean - 2.0 * sd).numpy(),
+                        (mean + 2.0 * sd).numpy(),
+                        color='C0', alpha=0.3)
 
         if acquisition:
-            plt.plot(Xtest.numpy(), self.expected_improvement(Xtest, eps=0))
+            ax.plot(Xtest.numpy(), self.expected_improvement(Xtest, eps=0))
 
             # TODO cache that value rather than recompute!
             next_lamb = self.max_ei(precision=50)
-            plt.plot(next_lamb.numpy(),
-                     self.expected_improvement(next_lamb, eps=0).numpy(),
-                     'v')
-
-        plt.xlim(*self.search_space)
-        plt.show()
+            ax.plot(next_lamb.numpy(),
+                    self.expected_improvement(next_lamb, eps=0).numpy(),
+                    'v')
 
     def expected_improvement(self, lamb, eps=0.):
         """
@@ -244,13 +257,16 @@ class BayesianOptimizer:
         is sampling a value uniformly from the search space.
         """
 
+        if initial_lamb < self.search_space[0] or \
+                initial_lamb > self.search_space[1]:
+            raise ValueError('initial_lamb must respect the search space.')
+
         # initialize D^(0)
         if initial_lamb is None:
             self.inquired[0] = td.Uniform(*self.search_space).sample([1])
         else:
             self.inquired[0] = initial_lamb
 
-        # fixme: this saves array object to the list!
         self.cost[0] = self.closure(float(self.inquired[0].numpy()))
         self.incumbent = self.inquired[0]
         self.inc_idx = 0
@@ -265,7 +281,7 @@ class BayesianOptimizer:
             self.gaussian_process(X=self.inquired[:t], y=self.cost[:t])
 
             # select next point to query
-            # TODO move precision to arguments
+            # TODO move precision to self.optimize arguments
             lamb = self.max_ei(precision=200, eps=eps)
             self.inquired[t] = lamb
 
@@ -273,6 +289,7 @@ class BayesianOptimizer:
             # TODO write out plot for t > 1
             self.bo_plot(X=self.inquired[:t],
                          y=self.cost[:t],
+                         ax=self.axes[t - 1],
                          acquisition=True)
 
             # Query cost function
