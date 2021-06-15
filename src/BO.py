@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 class BayesianOptimizer:
     def __init__(self, search_space, budget, closure):
         """
-        BO working on a 1d search space
+        Bayesian Optimization working on a 1d search space.
+
         :param search_space: tuple of floats, giving the interval bounds of
         the one dimensional continuous search space.
         :param budget: int. number of function evaluations.
@@ -33,10 +34,14 @@ class BayesianOptimizer:
         self.inquired = torch.zeros(budget)
         self.cost = torch.zeros(budget)
 
+
         # Plot preallocation to gather info along the way rather than
         # recomputing it.
-        self.fig, self.axes = plt.subplots(self.budget, 1, sharex=True)
+        nrows = self.budget // 2 + self.budget % 2
+        self.fig, self.axes = plt.subplots(nrows, 2, sharex=True)
+        self.axes = self.axes.flatten()
         title = 'Bayesian Optimization for steps 2-{}'
+        # self.fig.set_figheight( self.budget)
         self.fig.suptitle(title.format(budget))
         self.fig_handle = {}
 
@@ -45,7 +50,7 @@ class BayesianOptimizer:
 
     def gaussian_process(self, X, y, num_steps=2000, noise=0.):
         """
-        fit the Gaussian process to the observed data <X, y>.
+        Fit the Gaussian process to the observed data <X, y>.
         library for gp: https://pyro.ai/examples/gp.html
         :param X: tensor.
         :param y: tensor.
@@ -59,33 +64,55 @@ class BayesianOptimizer:
 
         # Do MAP estimation of the GP.
         pyro.clear_param_store()
+
+        # Select the Kernel & set up the GP
         # kernel = gp.kernels.Exponential(input_dim=1,
         #                                 variance=torch.tensor(5.),
         #                                 lengthscale=torch.tensor(10.))
-        # TODO Prevent variance & lengthscale optimization
         # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
         #                         lengthscale=torch.tensor(10.))
         kernel = gp.kernels.Matern32(
-            input_dim=1, variance=torch.tensor(5.),
-            lengthscale=torch.tensor(10.))
+            input_dim=1, variance=torch.tensor(1.),
+            lengthscale=torch.tensor(1.))
         self.gpr_t = gp.models.GPRegression(
             X, y, kernel,
             noise=torch.tensor(noise),
             jitter=1e-5)
 
+
         # TODO consider storing & saving the gprs (for debug purposes)
 
-        # note that our priors have support on the positive reals
-        self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(
-            dist.LogNormal(0.0, 1.0))
-        self.gpr_t.kernel.variance = pyro.nn.PyroSample(
-            dist.LogNormal(0.0, 1.0))
+        # DEPREC MAP ESTIMATION OF GP ----------------------------------------
+        # USING THE MAP ESTIMATE CHANGES LENGTHSCALE & VARIANCE BETWEEN RUNS
+        # # TODO Fixing lengthscale & variance across runs?
+        # #  THIS DOES NOT WORK THOUGH
+        # # self.gpr_t.kernel.lengthscale = 1.
+        # # self.gpr_t.kernel.variance = 1.
+        #
+        # # Set up the Prior from lengthscale & variance of current GP.
+        # # TODO consider using more 'dense' priors to have less flexibility
+        # #  across multiple GP estimations.
+        # self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(
+        #     dist.LogNormal(0.0, 1.0))
+        # self.gpr_t.kernel.variance = pyro.nn.PyroSample(
+        #     dist.LogNormal(0.0, 1.0))
+        #
+        # # Fit GP to the observations.
+        # optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
+        # loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
+        # losses = []
+        #
+        # for i in range(num_steps):
+        #     optimizer.zero_grad()
+        #     loss = loss_fn(self.gpr_t.model, self.gpr_t.guide)
+        #     loss.backward()
+        #     optimizer.step()
+        #     losses.append(loss.item())
 
-        # Fit GP to the observations.
+        # Fitting GP using ELBO -----------------------------------------------
         optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
         loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
         losses = []
-
         for i in range(num_steps):
             optimizer.zero_grad()
             loss = loss_fn(self.gpr_t.model, self.gpr_t.guide)
@@ -177,11 +204,6 @@ class BayesianOptimizer:
                     self.fig_handle[name] = axs[0]
                 else:
                     self.fig_handle[name] = axs
-
-            # add legend to first ax
-            ax.legend(handles=self.fig_handle.values())
-
-
 
     def expected_improvement(self, lamb, eps=0.):
         """
@@ -340,5 +362,12 @@ class BayesianOptimizer:
                 [(self.incumbent, self.inc_idx, self.cost[self.inc_idx]),
                  (lamb.data, t, self.cost[t])],
                 key=lambda x: x[2])
+
+        # Place the legend with only one unique marker across all axes.
+        self.fig.subplots_adjust(right=0.85)
+        self.fig.legend(handles=self.fig_handle.values(),
+                      borderaxespad=0.1,
+                      loc="center right",
+                      prop={'size': 6})  # scale the legend
 
         return self.incumbent
