@@ -31,7 +31,7 @@ module load python/3.9.0 # remember to load this before calling python3!
 echo "#### conquering the snake ####"
 echo 'currently at dir: ' $PWD
 echo 'be aware to change to /BOResNet/ and start script using "bash shell/Jobs/Unittests.sh"'
-cd /home/tim/PycharmProjects/BOResNet/
+#cd /home/tim/PycharmProjects/BOResNet/
 
 # make sure not to add .py ending when calling a module file
 COMMIT_ID=$(git rev-parse --short HEAD)

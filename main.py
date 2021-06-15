@@ -10,7 +10,7 @@ from src.RUNS import RUNS
 from src.BO import BayesianOptimizer
 
 # setup your computation device / plotting method
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # seeding for reproducibility
@@ -30,11 +30,11 @@ x_train, x_test, y_train, y_test = load_npz_kmnist(
 # testing if training starts at all
 
 # FIXME: change this back to the full dataset!
-n = 100  # len(x_train)
-x_train = x_train[:n]
-y_train = y_train[:n]
-x_test = x_test[:int(n / 10)]
-y_test = y_test[:int(n / 10)]
+# n = 100  # len(x_train)
+# x_train = x_train[:n]
+# y_train = y_train[:n]
+# x_test = x_test[:int(n / 10)]
+# y_test = y_test[:int(n / 10)]
 
 # plot an example image
 # plot_kmnist(x_train, y_train,
