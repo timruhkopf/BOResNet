@@ -46,8 +46,8 @@ class RUNS:
 
         # pre-allocate a loss tensor for the current run
         # both for plotting purposes
-        no_losses = len(self.trainloader.dataset) * \
-                    self.epochs / self.trainloader.batch_size
+        no_losses = (len(self.trainloader.dataset) *
+                     self.epochs / self.trainloader.batch_size)
         self.trainlosses.append(torch.zeros(int(no_losses)))
         self.lrs.append(lr)
 

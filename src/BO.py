@@ -280,8 +280,8 @@ class BayesianOptimizer:
         is sampling a value uniformly from the search space.
         """
 
-        if initial_lamb < self.search_space[0] or \
-                initial_lamb > self.search_space[1]:
+        if (initial_lamb < self.search_space[0] or
+                initial_lamb > self.search_space[1]):
             raise ValueError('initial_lamb must respect the search space.')
 
         # initialize D^(0)

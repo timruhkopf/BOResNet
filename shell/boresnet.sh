@@ -22,6 +22,10 @@ module purge
 # install packages:
 module load python/3.9.0 # remember to load this before calling python3!
 # python3 -m  pip install torch  # when it was not installed previously
+# python3 -m pip install pyro-ppl
+# python3 -m pip install numpy
+# python3 -m pip install matplotlib
+
 # python3 -m pip install git+https://github.com/AdamCobb/hamiltorch # 3rd party
 
 echo "#### conquering the snake ####"
