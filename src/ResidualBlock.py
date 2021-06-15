@@ -6,8 +6,7 @@ import itertools
 class ResidualBlock(nn.Module):
     def __init__(self, cunits, kernel_size=3):
         """
-        Same sized Convolution
-        implements a scalable version of  the dashed and solid line residual
+        Implements a scalable version of the dashed and solid line residual
         skip connection blocks from
 
         @inproceedings{he2016deep,
@@ -20,21 +19,27 @@ class ResidualBlock(nn.Module):
           year={2016}
         }
 
-        In case of cunits = (64, 64, 64), this amounts to a skip over two (
+        It is scalable in particular with regard to the number of
+        Convolutional layers and the 'skip-distance'. Consider the two
+        following parametrizations:
+
+        (0) In case of cunits = (64, 64, 64), this amounts to a skip over two (
         no_skips = len(cunits)-1) convolutions:
 
         ----------------------------------
         |                                |
         x --> conv, bn, relu, conv, bn + x , relu ---> y
 
-        In case of cunits = (64, 64, 64, 64), a skip over three convolutions
+        (1) In case of cunits = (64, 64, 64, 64), a skip over three
+        convolutions
+
         -------------------------------------------------
         |                                                |
         x --> conv, bn, relu, conv, bn, relu, conv, bn + x , relu ---> y
 
 
         :param cunits: tuple of consecutive convolutional channels, describing
-        the entire residblock's convolutions.
+        the entire residblock's ('same') convolutions.
         Starting with no. of channels in the residblock's input tensor,
         and continuing with the consecutive channels introduced by convolution.
 
@@ -46,34 +51,33 @@ class ResidualBlock(nn.Module):
         In this scenario of unequal no. of channels between beginning and
         last conv., the skip connection cannot be identity, as the same
         sized images (same convolution) have a different number of channels.
-        To adjust the size, a 1x1 convolution of appropriate no. of channels
-        is used as skip connection before adding the scaled X to the
+        To adjust the channels, a 1x1 convolution of appropriate no. of
+        channels is used as skip connection before adding the scaled X to the
         residblock's output.
         :param kernel_size: the squared filter size used in all convolutions in
         the residblock.
         """
 
-        # setup nn.Module's bookkeeping
+        # Setup nn.Module's bookkeeping.
         super().__init__()
 
-        # save arguments for later usage
+        # Save arguments for later usage.
         self.cunits = cunits
         self.kernel_size = kernel_size
 
-        # scalable version of repetitive parts (conv-bn-relu) to skip over
-        # notice, that relu are applied in forward path!
+        # Scalable version of repetitive parts (conv-bn-relu) to skip over.
         self.layers = torch.nn.ModuleList(itertools.chain.from_iterable(
             (nn.Conv2d(no_in, no_out, kernel_size=kernel_size, padding=1),
              nn.BatchNorm2d(no_out),
              nn.ReLU())
             for no_in, no_out in zip(cunits[:-2], cunits[1:-1])))
 
-        # final (conv-bn-skip-relu)
-        # add identity or 1x1 conv depending on the shape-change in residblock
+        # Final (conv-bn-skip-relu) part of the Residblock.
+        # Add identity or 1x1 conv depending on the shape-change in residblock.
         self.layers.extend(
             [nn.Conv2d(cunits[-2], cunits[-1], kernel_size, padding=1),
              nn.BatchNorm2d(cunits[-1]),
-             # skip connection; either identity or 1x1 conv to adjust shape
+             # Skip connection; either identity or 1x1 conv to adjust shape
              nn.Identity() if cunits[0] == cunits[-1] else \
                  nn.Conv2d(cunits[0], cunits[-1], 1),
              nn.ReLU()])
@@ -89,16 +93,27 @@ class ResidualBlock(nn.Module):
         return s.format(base, sublayers, skip)
 
     def forward(self, x):
+        """
+        Forward path of the nn.Module. See nn.Module for details
+        :param x: torch.Tensor.
+        :return: torch.Tensor
+        """
         xskip = x
 
-        # skipped block until skip connection
+        # Forward path up to skip connection
         for layer in self.layers[:-2]:
             x = layer(x)
 
+        # Continued forward path starting with skip connection
         # relu(X+ ident(X_skip) or  relu(X+ conv1x1(X_skip).
+        # TODO consider using F.relu instead.
         return self.layers[-1](x + self.layers[-2](xskip))
 
     def reset_parameters(self):
+        """
+        Resampling all parameters of the model
+        :return: None.
+        """
         for layer in self.layers:
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()

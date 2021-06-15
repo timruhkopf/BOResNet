@@ -7,14 +7,13 @@ import datetime
 class RUNS:
     def __init__(self, model, trainloader, testloader, epochs, path=None):
         """
-        RUN is class to gather all the information across Individual
-        Calls to evaluate_model_with_SGD.
+        RUN is a naive tracer class to gather all the information across
+        individual calls to the evaluate_model_with_SGD function.
 
-        This is can act as a naive tracer.
-        :param model: instance to a nn.Module
-        :param trainloader:
-        :param testloader:
-        :param epochs: int. No. of cycles through trainloader
+        :param model: Instance to a nn.Module subclass.
+        :param trainloader: Instance to torch.utils.data.Dataloader.
+        :param testloader: Instance to torch.utils.data.Dataloader.
+        :param epochs: int. Number of cycles through trainloader.
         :param path: str. path to a folder/modelbase name, i.e. all models are
         saved to this folder using the modelbase name and a time stamp.
         """
@@ -23,7 +22,7 @@ class RUNS:
         self.testloader = testloader
         self.epochs = epochs
 
-        # track the information
+        # Tracked information preallocation
         self.trainlosses = []
         self.lrs = []
         self.costs = []
@@ -33,9 +32,10 @@ class RUNS:
 
     def evaluate_model_with_SGD(self, lr):
         """
-        Train model once & evaluate it on the test dataset.
-        Training the model on the data from the dataloader for n epochs
-        using sgd, with a specified learning rate.
+        'Black-Box' model to be trained using SGD & the specified learning
+        rate using n epochs on the training data. Subsequently, the final
+        model is evaluated on the entire testloader once.
+        Uses nn.CrossEntropyLoss in the process.
 
         :param lr: float. learning rate of SGD.
         :return: torch.Tensor. loss of the model trained with lr evaluated
@@ -44,18 +44,18 @@ class RUNS:
         optimizer = SGD(self.model.parameters(), lr=lr)
         loss_fn = nn.CrossEntropyLoss()
 
-        # pre-allocate a loss tensor for the current run
-        # both for plotting purposes
+        # Pre-allocate a loss tensor for the current run
+        # both for plotting purposes.
         no_losses = (len(self.trainloader.dataset) *
                      self.epochs / self.trainloader.batch_size)
         self.trainlosses.append(torch.zeros(int(no_losses)))
         self.lrs.append(lr)
 
         self.train(optimizer, loss_fn)
-        cost = self.test()
+        cost = self.test(loss_fn)
 
-        # save the state of the model & reset the parameters
-        # ensuring independent initialisation & model "realisations"
+        # Save the state of the model & reset the parameters
+        # ensuring independent initialisation & model "realisations".
         if self.path is not None:
             s = '{:%Y%m%d_%H%M%S}'
             timestamp = s.format(datetime.datetime.now())
@@ -65,6 +65,13 @@ class RUNS:
         return cost
 
     def train(self, optimizer, loss_fn):
+        """
+        Train self.model for self.epochs on the training set.
+        :param optimizer: subclass to torch.optim.Optimizer
+        :param loss_fn: callable, taking a true vector y & the models
+        corresponding prediction.
+        :return: None. changes self.model's parameters inplace.
+        """
         for epoch in range(self.epochs):
             for i, (images, labels) in enumerate(self.trainloader):
                 # images.to(device)
@@ -79,16 +86,19 @@ class RUNS:
                 train_idx = int(i + len(self.trainloader) * epoch)
                 self.trainlosses[-1][train_idx] = loss
 
-        # deprec
-        # plt.plot(self.trainlosses[-1].detach().numpy())
-
         print('Finished training')
 
-    def test(self):
+    def test(self, loss_fn):
+        """
+        Evaluate the model on the testloader using loss function.
+
+        :param loss_fn: callable. Takes the model's prediction and the
+        testloaders' second element as input to compute the loss.
+        :return: torch.Tensor.: the accumulated loss.
+        """
         # evaluate the cost function on D^test
         cost = torch.tensor([0.])
         # test_acc = torch.tensor([0.])
-        loss_fn = nn.CrossEntropyLoss()
         test_acc = torch.tensor(0.)
         with torch.no_grad():
             for images, labels in self.testloader:
@@ -97,7 +107,7 @@ class RUNS:
                 # TODO metric only for testing
                 cost += loss_fn(y_pred, labels)
 
-                # accuracy on test data
+                # Accuracy on test data.
                 _, prediction = torch.max(y_pred.data, 1)
                 test_acc += torch.sum(prediction == labels.data)
 
