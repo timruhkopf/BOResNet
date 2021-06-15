@@ -34,25 +34,24 @@ class ResNet(nn.Module):
 
         # final layers for linear combination & class prediction
         # assuming square image, linear dim is caused by 7x7 conv & max pooling
-        linear_dim = architecture[-1][-1] * int(
-            ((img_size[0] +2-(7-1)) / 2 / 2) ** 2)
+        last_conv_dim = ((img_size[0] + 2 - (7 - 1)) / 2 / 2) ** 2
+        linear_dim = architecture[-1][-1] * int(last_conv_dim)
         # original img e.g. 28 padded by 2 (left & right), conv reduces
         # image size by (kernel_size-1). each max pool of kernel 2 halves
         # the remaining image size)
         # in the end linear layer's input is the flattened conv result
         # e.g. [1, 128, 6, 6] which is a 1 * 128 * 6**2 vector.
-        self.layers.extend([nn.MaxPool2d(2, 2),
-                            nn.Flatten(),
-                            nn.Linear(in_features=linear_dim,
-                                      out_features=no_classes),
-                            nn.Softmax(dim=-1)])
+        self.layers.extend(
+            [nn.MaxPool2d(2, 2), nn.Flatten(),
+             nn.Linear(in_features=linear_dim, out_features=no_classes),
+             nn.Softmax(dim=-1)])
 
         # simplify model by working with sequential
         self.layers = nn.Sequential(*self.layers)
 
     def __repr__(self):
-        base = 'ResNet(architecture={}, no_classes={})'.format(
-            self.architecture, self.no_classes)
+        s = 'ResNet(architecture={}, no_classes={})'
+        base = s.format(self.architecture, self.no_classes)
 
         sublayers = '\n\t'.join([str(l) for l in self.layers])
         return '{}\n\t{}'.format(base, sublayers)

@@ -46,9 +46,9 @@ class RUNS:
 
         # pre-allocate a loss tensor for the current run
         # both for plotting purposes
-        self.trainlosses.append(torch.zeros(int(
-            len(self.trainloader.dataset) *
-            self.epochs / self.trainloader.batch_size)))
+        no_losses = len(self.trainloader.dataset) * \
+                    self.epochs / self.trainloader.batch_size
+        self.trainlosses.append(torch.zeros(int(no_losses)))
         self.lrs.append(lr)
 
         self.train(optimizer, loss_fn)
@@ -57,8 +57,8 @@ class RUNS:
         # save the state of the model & reset the parameters
         # ensuring independent initialisation & model "realisations"
         if self.path is not None:
-            timestamp = '{:%Y%m%d_%H%M%S}'.format(
-                datetime.datetime.now())
+            s = '{:%Y%m%d_%H%M%S}'
+            timestamp = s.format(datetime.datetime.now())
             torch.save(self.model.state_dict(), self.path + timestamp)
 
         self.model.reset_parameters()

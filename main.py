@@ -64,10 +64,12 @@ print('y\'s shape: {}\nx\'s shape: {}'.format(y_train.shape, x_train.shape))
 trainset = TensorDataset(x_train, y_train)
 testset = TensorDataset(x_test, y_test)
 
-trainloader = DataLoader(trainset, batch_size=batch_size,
-                         shuffle=True, num_workers=1)
-testloader = DataLoader(testset, batch_size=batch_size,
-                        shuffle=True, num_workers=1)
+trainloader = DataLoader(
+    trainset, batch_size=batch_size,
+    shuffle=True, num_workers=1)
+testloader = DataLoader(
+    testset, batch_size=batch_size,
+    shuffle=True, num_workers=1)
 
 # iterable = testloader.__iter__()
 # x, y = next(iterable)
@@ -95,8 +97,9 @@ resnet9 = ResNet(
 
 # create, track & run a model with sgd under a specific learning rate
 root = os.getcwd()
-runs = RUNS(resnet9, trainloader, testloader, epochs=2,
-            path=root + '/models/fullrun/model_')
+runs = RUNS(
+    resnet9, trainloader, testloader, epochs=2,
+    path=root + '/models/fullrun/model_')
 
 # runs.evaluate_model_with_SGD(lr=0.001)
 # runs.evaluate_model_with_SGD(lr=0.005)
@@ -104,9 +107,11 @@ runs = RUNS(resnet9, trainloader, testloader, epochs=2,
 
 
 # pass closure object to BO
-bo = BayesianOptimizer(search_space=(0.001, 0.02),
-                       budget=10,  # FIXME: change this
-                       closure=runs.evaluate_model_with_SGD)
+bo = BayesianOptimizer(
+    search_space=(0.001, 0.02),
+    budget=10,  # FIXME: change this
+    closure=runs.evaluate_model_with_SGD)
+
 bo.optimize(eps=0., initial_lamb=0.01)
 
 root = os.getcwd()

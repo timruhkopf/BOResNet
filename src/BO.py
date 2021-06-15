@@ -27,8 +27,8 @@ class BayesianOptimizer:
         self.closure = closure
 
         if search_space[0] > search_space[1]:
-            raise ValueError('Searchspace Argument order is not correct: ('
-                             'lower, upper)')
+            msg = 'Searchspace Argument order is not correct: (lower, upper)'
+            raise ValueError(msg)
         self.search_space = search_space
 
         # sample the first data point at random.
@@ -67,11 +67,13 @@ class BayesianOptimizer:
         # TODO Prevent variance & lengthscale optimization
         # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
         #                         lengthscale=torch.tensor(10.))
-        kernel = gp.kernels.Matern32(input_dim=1, variance=torch.tensor(5.),
-                                     lengthscale=torch.tensor(10.))
-        self.gpr_t = gp.models.GPRegression(X, y, kernel,
-                                            noise=torch.tensor(noise),
-                                            jitter=1e-5)
+        kernel = gp.kernels.Matern32(
+            input_dim=1, variance=torch.tensor(5.),
+            lengthscale=torch.tensor(10.))
+        self.gpr_t = gp.models.GPRegression(
+            X, y, kernel,
+            noise=torch.tensor(noise),
+            jitter=1e-5)
 
         # TODO consider storing & saving the gprs (for debug purposes)
 
@@ -93,13 +95,11 @@ class BayesianOptimizer:
             losses.append(loss.item())
 
         # plt.plot(losses)
-
-        print('GP Parameter\n\t'
-              'Variance: {}\n\t'
-              'Lengthscale: {}\n\t'
-              'Noise: {}'.format(self.gpr_t.kernel.variance.item(),
-                                 self.gpr_t.kernel.lengthscale.item(),
-                                 self.gpr_t.noise.item()))
+        msg = 'GP Parameter\n\tVariance: {}\n\tLengthscale: {}\n\tNoise: {}'
+        print(msg.format(
+            self.gpr_t.kernel.variance.item(),
+            self.gpr_t.kernel.lengthscale.item(),
+            self.gpr_t.noise.item()))
 
     def bo_plot(self, X, y, ax, acquisition=True, n_test=500,
                 closure=None):
@@ -220,9 +220,7 @@ class BayesianOptimizer:
         search space.
         :returns the maximum value of the current EI function
         """
-        lamb = torch.linspace(*self.search_space,
-                              steps=precision)
-
+        lamb = torch.linspace(*self.search_space, steps=precision)
         u = self.expected_improvement(lamb, eps=eps)
 
         # find lamb* = argmax_{lamb} u(lamb)
@@ -321,9 +319,9 @@ class BayesianOptimizer:
             self.cost[t] = self.closure(lamb.data.numpy()[0])
 
             # replace the incumbent if necessary
-            self.incumbent, self.inc_idx, _ = min([
-                (self.incumbent, self.inc_idx, self.cost[self.inc_idx]),
-                (lamb.data, t, self.cost[t])],
+            self.incumbent, self.inc_idx, _ = min(
+                [(self.incumbent, self.inc_idx, self.cost[self.inc_idx]),
+                 (lamb.data, t, self.cost[t])],
                 key=lambda x: x[2])
 
         return self.incumbent

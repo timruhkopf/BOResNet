@@ -70,13 +70,13 @@ class ResidualBlock(nn.Module):
 
         # final (conv-bn-skip-relu)
         # add identity or 1x1 conv depending on the shape-change in residblock
-        self.layers.extend([
-            nn.Conv2d(cunits[-2], cunits[-1], kernel_size, padding=1),
-            nn.BatchNorm2d(cunits[-1]),
-            # skip connection; either identity or 1x1 conv to adjust shape
-            nn.Identity() if cunits[0] == cunits[-1] else \
-                nn.Conv2d(cunits[0], cunits[-1], 1),
-            nn.ReLU()])
+        self.layers.extend(
+            [nn.Conv2d(cunits[-2], cunits[-1], kernel_size, padding=1),
+             nn.BatchNorm2d(cunits[-1]),
+             # skip connection; either identity or 1x1 conv to adjust shape
+             nn.Identity() if cunits[0] == cunits[-1] else \
+                 nn.Conv2d(cunits[0], cunits[-1], 1),
+             nn.ReLU()])
 
     def __repr__(self):
         base = 'Residualblock(cunits={}, kernel_size={}):'.format(
@@ -85,8 +85,8 @@ class ResidualBlock(nn.Module):
         sublayers = '\n\t'.join([str(l) for l in self.layers[:-2]])
         skip = '\n\t'.join([str(l) for l in self.layers[-2:]])
 
-        return '{}\n\t---scaled block---\n\t{}\n\t---skip connection' \
-               '---\n\t{}'.format(base, sublayers, skip)
+        s = '{}\n\t---scaled block---\n\t{}\n\t---skip connection---\n\t{}'
+        return s.format(base, sublayers, skip)
 
     def forward(self, x):
         xskip = x
