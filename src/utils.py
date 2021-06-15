@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 # import pandas as pd
 # import matplotlib
 # from matplotlib import font_manager
@@ -35,4 +37,3 @@ def plot_kmnist(x_array, y_array, labelpath, idx):
 
     plt.title('label class:{}'.format(y_array[idx]))
     plt.imshow(x_array[idx], cmap='gray')
-

@@ -11,7 +11,7 @@ from src.BO import BayesianOptimizer
 
 # setup your computation device / plotting method
 matplotlib.use('TkAgg')
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # seeding for reproducibility
 pyro.set_rng_seed(0)
@@ -58,7 +58,7 @@ x_train = torch.unsqueeze(x_train, dim=1)
 x_test = torch.unsqueeze(x_test, dim=1)
 
 # descriptive info
-print('y\'s shape: {}\nx\'s shape: {}'.format(y_train.shape, x_train.shape))
+print("y's shape: {}\nx's shape: {}".format(y_train.shape, x_train.shape))
 
 # create Dataset & dataloader for Train & Test.
 trainset = TensorDataset(x_train, y_train)
@@ -116,7 +116,7 @@ bo.optimize(eps=0., initial_lamb=0.01)
 
 root = os.getcwd()
 # bo.fig.legend()  # FIXME: add legend to the plot
-bo.fig.savefig(root + "/Plots/bo_fullrun.pdf", bbox_inches='tight')
+bo.fig.savefig(root + '/Plots/bo_fullrun.pdf', bbox_inches='tight')
 # print()
 
 #

@@ -1,12 +1,10 @@
 import torch
-import torch.nn as nn
+# import torch.nn as nn
 import torch.distributions as td
-from torch.optim import SGD
-
+# from torch.optim import SGD
 import pyro
 import pyro.contrib.gp as gp
 import pyro.distributions as dist
-
 from math import pi
 import matplotlib.pyplot as plt
 
@@ -31,12 +29,12 @@ class BayesianOptimizer:
             raise ValueError(msg)
         self.search_space = search_space
 
-        # sample the first data point at random.
+        # Sample the first data point at random.
         self.inquired = torch.zeros(budget)
         self.cost = torch.zeros(budget)
 
-        # plot preallocation to gather info along the way rather than
-        # recomputing it
+        # Plot preallocation to gather info along the way rather than
+        # recomputing it.
         self.fig, self.axes = plt.subplots(self.budget, 1, sharex=True)
         title = 'Bayesian Optimization for steps 2-{}'
         self.fig.suptitle(title.format(budget))
@@ -59,7 +57,7 @@ class BayesianOptimizer:
         if X.shape[0] != y.shape[0]:
             raise ValueError('X and y tensors do not match')
 
-        # now do MAP estimation:
+        # Do MAP estimation of the GP.
         pyro.clear_param_store()
         # kernel = gp.kernels.Exponential(input_dim=1,
         #                                 variance=torch.tensor(5.),

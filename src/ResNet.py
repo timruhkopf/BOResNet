@@ -1,9 +1,5 @@
-"""
-Author: Tim Ruhkopf
-License:
-"""
-
 import torch.nn as nn
+
 from src.ResidualBlock import ResidualBlock
 
 
