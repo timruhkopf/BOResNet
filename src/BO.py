@@ -201,11 +201,12 @@ class BayesianOptimizer:
 
         # calculate EI
         Z = (self.cost[self.inc_idx] - mu_t - eps) / sd_t
-        u = sd_t * (Z * td.Normal(0., 1.).cdf(Z) +
-                    torch.exp(td.Normal(0., 1.).log_prob(Z)) +
-                    # Normalizing constant of std. Normal required only for
-                    # plotting the exact EI:
-                    torch.tensor([2. * pi]) ** -1 / 2)
+        u = (sd_t
+             * (Z * td.Normal(0., 1.).cdf(Z)
+                + torch.exp(td.Normal(0., 1.).log_prob(Z))
+                # Normalizing constant of std. Normal required only for
+                # plotting the exact EI:
+                + torch.tensor([2. * pi]) ** -1 / 2))
 
         return u
 
