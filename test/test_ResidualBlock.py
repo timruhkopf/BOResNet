@@ -18,16 +18,20 @@ class Test_ResidualBlock(unittest.TestCase):
 
         # TODO instead of loading these arrays, consider creating random
         #  tensors.
-        os.chdir("..")
-        os.getcwd()
-        root_data = 'Data/Raw/'
-        self.x_train, self.y_train = load_npz_kmnist(
-            folder=root_data,
-            files=['kmnist-train-imgs.npz', 'kmnist-train-labels.npz'])
+        # os.chdir("..")
+        # os.getcwd()
+        # root_data = 'Data/Raw/'
+        # self.x_train, self.y_train = load_npz_kmnist(
+        #     folder=root_data,
+        #     files=['kmnist-train-imgs.npz', 'kmnist-train-labels.npz'])
+        #
+        # self.y_train = torch.unsqueeze(self.y_train, dim=1)
+        # self.x_train = torch.reshape(self.x_train, (-1, 1, 28, 28))
+        # print('train_shape', self.x_train.shape)
 
-        self.y_train = torch.unsqueeze(self.y_train, dim=1)
-        self.x_train = torch.reshape(self.x_train, (-1, 1, 28, 28))
-        print('train_shape', self.x_train.shape)
+        batch_size = 1
+        self.x = torch.rand([batch_size, 1, 28, 28])
+        self.y = torch.rand([batch_size, 8, 28, 28])
 
     def test_forward_dimensions(self):
         """Test, that the forward path produces the expected shape"""
@@ -35,7 +39,7 @@ class Test_ResidualBlock(unittest.TestCase):
             cunits=(1, 64, 64, 128),
             kernel_size=3)
 
-        self.assertEqual(residblock.forward(self.x_train[:1]).shape, \
+        self.assertEqual(residblock.forward(self.x[:1]).shape, \
                          torch.Size([1, 128, 28, 28]))
 
     def test_naive_training(self):
@@ -46,9 +50,6 @@ class Test_ResidualBlock(unittest.TestCase):
         from torch.optim import Adam
         from copy import deepcopy
 
-        batch_size = 1
-        x = torch.rand([1, 1, 28, 28])
-        y = torch.rand([1, 8, 28, 28])
 
         residblock = ResidualBlock(
             cunits=(1, 8, 8),
@@ -69,14 +70,14 @@ class Test_ResidualBlock(unittest.TestCase):
         # self.assertTrue(torch.equal(y_hat, residblock.forward(x)))
 
         state0 = deepcopy(residblock.state_dict())
-        oldstate_prediction = residblock.forward(x)
+        oldstate_prediction = residblock.forward(self.x)
 
         optimizer = Adam(residblock.parameters(), lr=0.005)
         loss_fn = nn.MSELoss()
 
         # training step
         optimizer.zero_grad()
-        loss = loss_fn(residblock.forward(x), y)
+        loss = loss_fn(residblock.forward(self.x), self.y)
         loss.backward()
         optimizer.step()
 
@@ -86,7 +87,7 @@ class Test_ResidualBlock(unittest.TestCase):
             self.assertIsNotNone(p.grad, msg.format(name))
             self.assertFalse(torch.allclose(p.data, state0[name]), msg_weights)
 
-        newstate_prediction = residblock.forward(x)
+        newstate_prediction = residblock.forward(self.x)
         lossdiff = loss_fn(oldstate_prediction, newstate_prediction)
 
         if torch.allclose(lossdiff, torch.tensor(0.)):
