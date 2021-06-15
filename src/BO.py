@@ -72,7 +72,8 @@ class BayesianOptimizer:
         self.gpr_t = gp.models.GPRegression(X, y, kernel,
                                             noise=torch.tensor(noise),
                                             jitter=1e-5)
-        # TODO consider storing the gprs (for debug purposes)
+
+        # TODO consider storing & saving the gprs (for debug purposes)
 
         # note that our priors have support on the positive reals
         self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(

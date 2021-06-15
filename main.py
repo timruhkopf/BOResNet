@@ -87,7 +87,7 @@ testloader = DataLoader(testset, batch_size=batch_size,
 
 resnet9 = ResNet(
     img_size=(28, 28),
-    architecture=((1, 16), (16, 16, 16), (16, 16, 16), (32, 32, 32),
+    architecture=((1, 16), (16, 16, 16), (16, 16, 16), (16, 32, 32),
                   (32, 32, 32), (32, 64, 64)),
     no_classes=10)
 
@@ -112,16 +112,17 @@ bo.optimize(eps=0., initial_lamb=0.01)
 root = os.getcwd()
 # bo.fig.legend()  # FIXME: add legend to the plot
 bo.fig.savefig(root + "/Plots/bo_fullrun.pdf", bbox_inches='tight')
-print()
+# print()
 
-# TODO write out the BO images & check for single run on entire dataset,
-#  multiple epochs
-# deprec
-import matplotlib.pyplot as plt
-
-plt.plot(runs.trainlosses[0].detach().numpy())
-
-bo.inquired
-runs.lrs
-
-# TODO: check that proposed !!!!!
+#
+# # TODO write out the BO images & check for single run on entire dataset,
+# #  multiple epochs
+# # deprec
+# import matplotlib.pyplot as plt
+#
+# plt.plot(runs.trainlosses[0].detach().numpy())
+#
+# bo.inquired
+# runs.lrs
+#
+# # TODO: check that proposed !!!!!
