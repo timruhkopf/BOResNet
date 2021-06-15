@@ -9,20 +9,20 @@
 
 # requiries
 module purge
-module load cuda90/fft
-module load cuda90/nsight
-module load cuda90/profiler
+#module --ignore-cache load cuda90/fft
+#module --ignore-cache load cuda90/nsight
+#module --ignore-cache load cuda90/profiler
 
 # GWDDG tutorial on tensorflow
-module load cuda90/toolkit/9.0.176
-module load cuda90/blas/9.0.176
-module load cudnn/90v7.3.1
+# module load cuda90/toolkit/9.0.176
+# module load cuda90/blas/9.0.176
+# module load cudnn/90v7.3.1
 
 # NOTICE Execution via bash shell/Jobs/Unittests.sh
 # install packages:
-module load python/3.8.2 # remember to load this before calling python3!
-# python3 -m  pip install torch
-# python3 -m pip install git+https://github.com/AdamCobb/hamiltorch
+module load python/3.9.0 # remember to load this before calling python3!
+# python3 -m  pip install torch  # when it was not installed previously
+# python3 -m pip install git+https://github.com/AdamCobb/hamiltorch # 3rd party
 
 echo "#### conquering the snake ####"
 echo 'currently at dir: ' $PWD
@@ -32,6 +32,7 @@ cd /home/tim/PycharmProjects/BOResNet/
 # make sure not to add .py ending when calling a module file
 COMMIT_ID=$(git rev-parse --short HEAD)
 echo 'current commit: ' $COMMIT_ID
+
 
 # make sure not to add .py ending when calling a module file
 python3 -m main #&>/usr/users/truhkop/BOResNet/consolelog.out
