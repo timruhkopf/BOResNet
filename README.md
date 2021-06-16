@@ -32,7 +32,7 @@ Hannover at the Leibniz University, I was tasked the following coding challenge
 
   Doc-Strings
 
-## My Solution
+## Proposed Solution 
 
 ### ResNet & ResdiualBlocks
 
@@ -52,14 +52,42 @@ stride 2 is used.
 
 Notice, the ResidualBlock class implements both the dashed & solid line
 identity and 1x1 convolution projections in a single and adaptive class.
-Further the interface easily allows to scale the ResidualBlock to various
-channel configurations and an arbitrary skipping distance. This allows the
-ResNet class to be a sequential composite of ResidualBlocks, which facilitates
-the entire class.
+These two types implement skip connections. The solid line is a simple 
+forwarding of the conv. block's input to the output. The dashed line 
+adjusts the input's size to compensate the output's difference in channels
+caused by the intermediate convolutions. This is done via a learned linear 
+projection. 
+Further the interface easily allows to scale the ResidualBlock 
+to various channel configurations and an arbitrary skipping distance. The 
+scalability is achieved by a nn.ModuleList design, that uses a list 
+comprehension that adds the layers as needed. nn.ModuleList takes care of 
+the bookkeeping on the involved nn.Parameters and makes the class easily 
+accessible. All of which allow the ResNet class to be a nn.Sequential 
+composite of ResidualBlocks, which facilitates the entire class design.
+Both classes adhere to the general format of nn.Modules.
 
-## Bayesian Optimisation
+### BlackBoxPipe
+This class is a both a naive tracer device and provides the training &
+testing prodedural pipeline for all models that are inquired by the 
+Bayesian optimization. Crucially, this class takes the parametrized 
+model (since the architecture is not searched over), sets up tracking and 
+provides a method "evaluate_model_with_SGD", which can be passed as 
+function object to the Bayesian Optimizer (BO) - but is still aware and 
+part of the BlackBoxPipe tracer. This function configures the pipeline in 
+dependence to the hyperparameter that is to be optimized; in this case: the 
+SGD's learning rate parameter. It's output is the cost, which BO inquired 
+for a given proposed hyperparameter.
 
-### Implementational details
+### Bayesian Optimisation
+
+Since the Optimisation Problem at hand is 1d, the current implementation is 
+confined to such spaces. Target is to find the arg min of \lambda
+
+
+$$\lambda^*=\arg\min_{\lambda\in\Lambda}c(\lambda)$$
+
+
+#### Implementational details
 
 This implementation seeks to optimize only 1d search spaces.
 
@@ -80,7 +108,7 @@ explicit cost function.
 
   
   
-### Refactoring Ideas
+## Refactoring Ideas
 
 * Maybe use another third party GP implementation, that allows to fix the 
 lenghtscale & variance of the GP kernel. The current optimizes both during 
