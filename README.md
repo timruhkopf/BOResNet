@@ -84,7 +84,7 @@ Since the Optimisation Problem at hand is 1d, the current implementation is
 confined to such spaces. Target is to find the arg min of \lambda
 
 
-$$\lambda^*=\arg\min_{\lambda\in\Lambda}c(\lambda)$$
+    $$\lambda^*=\arg\min_{\lambda\in\Lambda}c(\lambda)$$
 
 
 #### Implementational details
