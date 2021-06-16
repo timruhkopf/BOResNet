@@ -8,6 +8,8 @@ import pyro.distributions as dist
 from math import pi
 import matplotlib.pyplot as plt
 
+from tqdm import tqdm
+
 
 class BayesianOptimizer:
     def __init__(self, search_space, budget, closure):
@@ -33,7 +35,6 @@ class BayesianOptimizer:
         # Sample the first data point at random.
         self.inquired = torch.zeros(budget)
         self.cost = torch.zeros(budget)
-
 
         # Plot preallocation to gather info along the way rather than
         # recomputing it.
@@ -79,35 +80,7 @@ class BayesianOptimizer:
             noise=torch.tensor(noise),
             jitter=1e-5)
 
-
         # TODO consider storing & saving the gprs (for debug purposes)
-
-        # DEPREC MAP ESTIMATION OF GP ----------------------------------------
-        # USING THE MAP ESTIMATE CHANGES LENGTHSCALE & VARIANCE BETWEEN RUNS
-        # # TODO Fixing lengthscale & variance across runs?
-        # #  THIS DOES NOT WORK THOUGH
-        # # self.gpr_t.kernel.lengthscale = 1.
-        # # self.gpr_t.kernel.variance = 1.
-        #
-        # # Set up the Prior from lengthscale & variance of current GP.
-        # # TODO consider using more 'dense' priors to have less flexibility
-        # #  across multiple GP estimations.
-        # self.gpr_t.kernel.lengthscale = pyro.nn.PyroSample(
-        #     dist.LogNormal(0.0, 1.0))
-        # self.gpr_t.kernel.variance = pyro.nn.PyroSample(
-        #     dist.LogNormal(0.0, 1.0))
-        #
-        # # Fit GP to the observations.
-        # optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
-        # loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
-        # losses = []
-        #
-        # for i in range(num_steps):
-        #     optimizer.zero_grad()
-        #     loss = loss_fn(self.gpr_t.model, self.gpr_t.guide)
-        #     loss.backward()
-        #     optimizer.step()
-        #     losses.append(loss.item())
 
         # Fitting GP using ELBO -----------------------------------------------
         optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
@@ -261,34 +234,6 @@ class BayesianOptimizer:
         argmax = u.max(0)[1]
         return lamb[argmax].reshape((1,))  # = lamb*
 
-    # DEPREC IATED FUNCTION
-    # def max_ei_sgd(self, ei_budget=1000):
-    #     """
-    #
-    #     The original idea was to maximize ei using autograd: d u / d lamb,
-    #     but since the function may be multimodal that may be parted by flat
-    #     regions (especially if the model does not assume noisy observations
-    #     c(lamb) + e). In this case SGD fails and most likely will stay get
-    #     stuck in local minima.
-    #     :param ei_budget: int. number of SGD steps
-    #     """
-    #     # Select next query point:
-    #     # optimize over self.expected_improvement() to find max value lamb.
-    #     lamb = torch.nn.Parameter(torch.tensor([self.incumbent]))
-    #     optimizer_EI = torch.optim.SGD([lamb], lr=0.05)
-    #     lamb.grad = None
-    #     losses = []
-    #
-    #     for i in range(ei_budget):
-    #         optimizer_EI.zero_grad()
-    #         loss = self.expected_improvement(lamb, eps=0.)
-    #         loss.backward()
-    #         optimizer_EI.step()
-    #         losses.append(loss.item())
-    #
-    #     lamb.data = lamb
-    #     return lamb
-
     def optimize(self, eps=0., initial_lamb=None):
         """
         Execute bayesian optimization on the provided closure.
@@ -334,7 +279,7 @@ class BayesianOptimizer:
         self.inc_idx = 0
 
         # Optimize lamb using the budget of function evaluations
-        for t in range(1, self.budget + 1):
+        for t in tqdm(range(1, self.budget + 1)):
             print('Current incumbent: {} '.format(self.incumbent))
             # Fit predictive model
             # TODO find a third party implementation, that allows online
@@ -366,8 +311,8 @@ class BayesianOptimizer:
         # Place the legend with only one unique marker across all axes.
         self.fig.subplots_adjust(right=0.85)
         self.fig.legend(handles=self.fig_handle.values(),
-                      borderaxespad=0.1,
-                      loc="center right",
-                      prop={'size': 6})  # scale the legend
+                        borderaxespad=0.1,
+                        loc="center right",
+                        prop={'size': 6})  # scale the legend
 
         return self.incumbent
