@@ -85,7 +85,7 @@ confined to such spaces. Target is to find the lambda, that minimizes the loss
 function. It does so, by inquiring the first lambda's cost by a randomly chosen
 lambda on the provided 1d search space (Top-left image). 
 
-![alt text](./Plots/bo_example-1.png "Title")
+![BO example](bo_example-1.png)
 
 With this observation, a Gaussian
 Process (here: using ELBO for optimization) can be utilized to approximate the
