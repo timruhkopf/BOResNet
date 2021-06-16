@@ -6,7 +6,7 @@ import os
 
 from src.resnet import ResNet
 from src.utils import load_npz_kmnist, plot_kmnist
-from src.runs import RUNS
+from src.blackboxpipe import BlackBoxPipe
 from src.bo import BayesianOptimizer
 
 # setup your computation device / plotting method
@@ -102,7 +102,7 @@ resnet9.to(DEVICE)
 
 # create, track & run a model with sgd under a specific learning rate
 root = os.getcwd()
-runs = RUNS(
+runs = BlackBoxPipe(
     resnet9, trainloader, testloader, epochs=2,
     path=root + '/models/fullrun/model_')
 

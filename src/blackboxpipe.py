@@ -4,11 +4,11 @@ from torch.optim import SGD
 import datetime
 
 
-class RUNS:
+class BlackBoxPipe:
     def __init__(self, model, trainloader, testloader, epochs, path=None):
         """
-        RUN is a naive tracer class to gather all the information across
-        individual calls to the evaluate_model_with_SGD function.
+        BlackBoxpipe is a naive tracer class to gather all the information
+        across individual calls to the evaluate_model_with_SGD function.
 
         :param model: Instance to a nn.Module subclass.
         :param trainloader: Instance to torch.utils.data.Dataloader.
