@@ -72,6 +72,7 @@ class RUNS:
         corresponding prediction.
         :return: None. changes self.model's parameters inplace.
         """
+        self.model.train()
         for epoch in range(self.epochs):
             for i, (images, labels) in enumerate(self.trainloader):
                 # images.to(device)
@@ -96,25 +97,27 @@ class RUNS:
         testloaders' second element as input to compute the loss.
         :return: torch.Tensor.: the accumulated loss.
         """
-        # evaluate the cost function on D^test
-        cost = torch.tensor([0.])
-        # test_acc = torch.tensor([0.])
-        test_acc = torch.tensor(0.)
+        # Evaluate accuracy & cost function on D^test.
+        num_correct = 0
+        num_samples = 0
+        cost = 0.
+        self.model.eval()
         with torch.no_grad():
-            for images, labels in self.testloader:
-                y_pred = self.model.forward(images)
+            for x, y in self.testloader:
+                scores = self.model(x)
+                _, predictions = scores.max(1)
+                num_correct += (predictions == y).sum()
+                num_samples += predictions.size(0)
 
-                # TODO metric only for testing
-                cost += loss_fn(y_pred, labels)
+                cost += loss_fn(scores, y)
 
-                # Accuracy on test data.
-                _, prediction = torch.max(y_pred.data, 1)
-                test_acc += torch.sum(prediction == labels.data)
+        avg_cost = cost/num_samples
+        acc = float(num_correct) / float(num_samples) * 100
+        print(f'Got {num_correct} / {num_samples} with accuracy '
+              f'{acc:.2f}')
 
-            test_acc = test_acc / len(self.testloader)
-        self.acc.append(test_acc)
-
+        self.acc.append(acc)
+        self.costs.append(avg_cost)
         print('Finished testing')
 
-        self.costs.append(cost)
-        return cost
+        return avg_cost
