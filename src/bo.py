@@ -16,6 +16,11 @@ class BayesianOptimizer:
         """
         Bayesian Optimization working on a 1d search space.
 
+        Using a Gaussian Process, the cost function is evaluated,
+        Subsequently, based on this approximation expected improvement is
+        calculated and its max value (=new hyperparameter) is queried from the
+        black box model.
+
         :param search_space: tuple of floats, giving the interval bounds of
         the one dimensional continuous search space.
         :param budget: int. number of function evaluations.
@@ -53,6 +58,7 @@ class BayesianOptimizer:
         """
         Fit the Gaussian process to the observed data <X, y>.
         library for gp: https://pyro.ai/examples/gp.html
+
         :param X: tensor.
         :param y: tensor.
         :param num_steps: int. Number of ADAM steps to optimize the
@@ -215,7 +221,9 @@ class BayesianOptimizer:
 
     def max_ei(self, precision=200, eps=0.):
         """
-        Naive optimization of the Expected improvement
+        Find the maximum of the previously calculated expected improvement.
+
+        Naive optimization of the Expected improvement.
         This function uses a trivial grid evaluation across the search space
         and evaluates self.expected_improvement for each of these grid points.
         lastly, it returns lamb* = argmax_{lamb} u(lamb).

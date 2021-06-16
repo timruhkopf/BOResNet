@@ -93,11 +93,7 @@ class ResidualBlock(nn.Module):
         return s.format(base, sublayers, skip)
 
     def forward(self, x):
-        """
-        Forward path of the nn.Module. See nn.Module for details
-        :param x: torch.Tensor.
-        :return: torch.Tensor
-        """
+        """Forward path of the nn.Module. See nn.Module for details."""
         xskip = x
 
         # Forward path up to skip connection
@@ -110,10 +106,7 @@ class ResidualBlock(nn.Module):
         return self.layers[-1](x + self.layers[-2](xskip))
 
     def reset_parameters(self):
-        """
-        Resampling all parameters of the model
-        :return: None.
-        """
+        """Resampling all parameters of the model."""
         for layer in self.layers:
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()

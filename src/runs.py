@@ -67,6 +67,7 @@ class RUNS:
     def train(self, optimizer, loss_fn):
         """
         Train self.model for self.epochs on the training set.
+
         :param optimizer: subclass to torch.optim.Optimizer
         :param loss_fn: callable, taking a true vector y & the models
         corresponding prediction.

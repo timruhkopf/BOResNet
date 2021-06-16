@@ -29,7 +29,8 @@ class ResNet(nn.Module):
          Be well aware that for two consecutive tuples, the last value of
          the former must be the first of the latter. e.g. (..., 64), (64, ...)
          for the architecture to make sense.
-        :param no_classes:
+        :param no_classes: Number of classes in the multi-class prediction
+        problem.
         """
         super().__init__()
         self.architecture = architecture
@@ -77,18 +78,11 @@ class ResNet(nn.Module):
         return '{}\n\t{}'.format(base, sublayers)
 
     def forward(self, x):
-        """
-        Forward path of the nn.Module. See nn.Module for details
-        :param x: torch.Tensor.
-        :return: torch.Tensor
-        """
+        """Forward path of the nn.Module. See nn.Module for details."""
         return self.layers(x)
 
     def reset_parameters(self):
-        """
-        Resampling all parameters of the model
-        :return: None.
-        """
+        """Resampling all parameters of the model."""
         for layer in self.layers:
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()
