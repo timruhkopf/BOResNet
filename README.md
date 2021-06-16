@@ -32,7 +32,7 @@ Hannover at the Leibniz University, I was tasked the following coding challenge
 
   Doc-Strings
 
-## Proposed Solution 
+## Proposed Solution
 
 ### ResNet & ResdiualBlocks
 
@@ -51,41 +51,49 @@ Only alteration to this paper: instead of avg. pooling, a maxpooling 2x2 with
 stride 2 is used.
 
 Notice, the ResidualBlock class implements both the dashed & solid line
-identity and 1x1 convolution projections in a single and adaptive class.
-These two types implement skip connections. The solid line is a simple 
-forwarding of the conv. block's input to the output. The dashed line 
-adjusts the input's size to compensate the output's difference in channels
-caused by the intermediate convolutions. This is done via a learned linear 
-projection. 
-Further the interface easily allows to scale the ResidualBlock 
-to various channel configurations and an arbitrary skipping distance. The 
-scalability is achieved by a nn.ModuleList design, that uses a list 
-comprehension that adds the layers as needed. nn.ModuleList takes care of 
-the bookkeeping on the involved nn.Parameters and makes the class easily 
-accessible. All of which allow the ResNet class to be a nn.Sequential 
-composite of ResidualBlocks, which facilitates the entire class design.
-Both classes adhere to the general format of nn.Modules.
+identity and 1x1 convolution projections in a single and adaptive class. These
+two types implement skip connections. The solid line is a simple forwarding of
+the conv. block's input to the output. The dashed line adjusts the input's size
+to compensate the output's difference in channels caused by the intermediate
+convolutions. This is done via a learned linear projection. Further the
+interface easily allows to scale the ResidualBlock to various channel
+configurations and an arbitrary skipping distance. The scalability is achieved
+by a nn.ModuleList design, that uses a list comprehension that adds the layers
+as needed. nn.ModuleList takes care of the bookkeeping on the involved
+nn.Parameters and makes the class easily accessible. All of which allow the
+ResNet class to be a nn.Sequential composite of ResidualBlocks, which
+facilitates the entire class design. Both classes adhere to the general format
+of nn.Modules.
 
 ### BlackBoxPipe
-This class is a both a naive tracer device and provides the training &
-testing prodedural pipeline for all models that are inquired by the 
-Bayesian optimization. Crucially, this class takes the parametrized 
-model (since the architecture is not searched over), sets up tracking and 
-provides a method "evaluate_model_with_SGD", which can be passed as 
-function object to the Bayesian Optimizer (BO) - but is still aware and 
-part of the BlackBoxPipe tracer. This function configures the pipeline in 
-dependence to the hyperparameter that is to be optimized; in this case: the 
-SGD's learning rate parameter. It's output is the cost, which BO inquired 
-for a given proposed hyperparameter.
+
+This class is a both a naive tracer device and provides the training & testing
+prodedural pipeline for all models that are inquired by the Bayesian
+optimization. Crucially, this class takes the parametrized model (since the
+architecture is not searched over), sets up tracking and provides a method "
+evaluate_model_with_SGD", which can be passed as function object to the
+Bayesian Optimizer (BO) - but is still aware and part of the BlackBoxPipe
+tracer. This function configures the pipeline in dependence to the
+hyperparameter that is to be optimized; in this case: the SGD's learning rate
+parameter. It's output is the cost, which BO inquired for a given proposed
+hyperparameter.
 
 ### Bayesian Optimisation
 
-Since the Optimisation Problem at hand is 1d, the current implementation is 
-confined to such spaces. Target is to find the arg min of \lambda
-
-
-    $$\lambda^*=\arg\min_{\lambda\in\Lambda}c(\lambda)$$
-
+Since the Optimisation Problem at hand is 1d, the current implementation is
+confined to such spaces. Target is to find the lambda, that minimizes the loss
+function. It does so, by inquiring the first lambda's cost by a randomly chosen
+lambda on the provided 1d search space. with this observation, a Gaussian
+Process (here: using ELBO for optimization) can be utilized to approximate the
+cost function. Using the GP and its assumption on the
+(spatial) correlation structure, both a mean prediction for the function can be
+estimated conditional on the observed points as well as a quantification of the
+uncertainty is now possible. Predicting mean and variance for each lambda in
+the search space, the expected improvement over the current best performing
+lambda can be calculated; thereby weighing the functions estimated mean and
+variance in an explore & exploit manner. The next candidate obtained in 
+this fashion is inquired from the provided closure and the cycle until the 
+budget on function evaluations is depleedted.
 
 #### Implementational details
 
@@ -106,30 +114,38 @@ equation.
 In order to be capable of debugging the BO, the BO Unittests utilize an
 explicit cost function.
 
-  
-  
 ## Refactoring Ideas
 
-* Maybe use another third party GP implementation, that allows to fix the 
-lenghtscale & variance of the GP kernel. The current optimizes both during 
-runtime. Further, a GP which is used in an online fashion, which reuses 
-former results would be computationally desirable. All of the above boils 
-down to three advantages over the current implementation:
-  1) Computational efficiency.
-  2) A more stable & consistent GP
-  3) the smoothness of the GP (kernel reach) can be fixed by the user.
-  
-* Find another arg max procedure for finding the current maximum of the 
-expected improvement function.
-  
-* Clean up BO's interface; decide where to put the arguments.
+* Maybe use another third party GP implementation, that allows to fix or
+  gradually change the lenghtscale & variance of the GP kernel. The current
+  optimizes both during runtime anew for each new datapoint. This may yield 
+  drastically inconsistent estimates of these hyperparameters and produce 
+  no continuouity on the smoothness of the cost function.  Further, a GP
+  which is used in an online fashion; reusing former results would be
+  computationally desirable. All of the above boils down to three advantages
+  over the current implementation:
+    1) Computational efficiency.
+    2) A more stable & consistent GP
+    3) the smoothness of the GP (kernel reach) can be fixed by the user.
 
-* Allow for a continuation protocol; i.e. kick off, where it left off. 
-  Maybe use some common interface similar to torch.optim.Optimizer
+* Find another arg max procedure for finding the current maximum of the
+  expected improvement function. The current implementation simply 
+  evaluates ei on a tighly spanned grid over the search space and returns 
+  its max. Challenges here are multi-modal distributions and flat 
+  (zero-gradient) areas which are hard to traverse through.
 
-* add logging
+* Clean up BO's interface; decide where to put the arguments: either at the 
+  class.__init__ or prefereably to optimize. The latter can be advantageous 
+  when considering continuation, if the last incumbent does not provide 
+  sufficient improvement and more budget is granted.
 
-* extend to multiple dimensions
+* Allow for a continuation protocol; i.e. kick off, where it left off. Maybe
+  use some common interface similar to torch.optim.Optimizer incl. its step 
+  method.
+
+* Add logging.
+
+* Extend to multiple dimensions of the searchspace.
 
 
 
