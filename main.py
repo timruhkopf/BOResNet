@@ -4,14 +4,16 @@ import pyro
 import matplotlib
 import os
 
-from src.ResNet import ResNet
+from src.resnet import ResNet
 from src.utils import load_npz_kmnist, plot_kmnist
-from src.RUNS import RUNS
-from src.BO import BayesianOptimizer
+from src.runs import RUNS
+from src.bo import BayesianOptimizer
 
 # setup your computation device / plotting method
 matplotlib.use('Agg')
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+BATCH_SIZE = 4
+ROOT_DATA = 'Data/Raw/'
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # seeding for reproducibility
 pyro.set_rng_seed(0)
@@ -20,21 +22,25 @@ torch.manual_seed(0)
 # (0) loading data & preporcessing according to
 # https://github.com/rois-codh/kmnist/blob/master/benchmarks/kuzushiji_mnist_cnn.py
 # Load the data
-batch_size = 4
-root_data = 'Data/Raw/'
 x_train, x_test, y_train, y_test = load_npz_kmnist(
-    folder=root_data,
+    folder=ROOT_DATA,
     files=['kmnist-train-imgs.npz', 'kmnist-test-imgs.npz',
            'kmnist-train-labels.npz', 'kmnist-test-labels.npz'])
+
+# perfectly balanced training /test datasets
+# --> use accuracy as quality measure
+# import pandas as pd
+# pd.Series(y_train.numpy()).value_counts()
+# pd.Series(y_test.numpy()).value_counts()
 
 # testing if training starts at all
 
 # FIXME: change this back to the full dataset!
-# n = 100  # len(x_train)
-# x_train = x_train[:n]
-# y_train = y_train[:n]
-# x_test = x_test[:int(n / 10)]
-# y_test = y_test[:int(n / 10)]
+n = 10000  # len(x_train)
+x_train = x_train[:n]
+y_train = y_train[:n]
+x_test = x_test[:int(n / 10)]
+y_test = y_test[:int(n / 10)]
 
 # plot an example image
 # plot_kmnist(x_train, y_train,
@@ -65,10 +71,10 @@ trainset = TensorDataset(x_train, y_train)
 testset = TensorDataset(x_test, y_test)
 
 trainloader = DataLoader(
-    trainset, batch_size=batch_size,
+    trainset, batch_size=BATCH_SIZE,
     shuffle=True, num_workers=1)
 testloader = DataLoader(
-    testset, batch_size=batch_size,
+    testset, batch_size=BATCH_SIZE,
     shuffle=True, num_workers=1)
 
 # iterable = testloader.__iter__()
@@ -86,14 +92,13 @@ testloader = DataLoader(
 #     architecture=((1, 8), (8, 8, 8), (8, 16, 16)),
 #     no_classes=10)
 
-
 resnet9 = ResNet(
     img_size=(28, 28),
     architecture=((1, 16), (16, 16, 16), (16, 16, 16), (16, 32, 32),
                   (32, 32, 32), (32, 64, 64)),
     no_classes=10)
 
-# resnet3.to(device)
+resnet9.to(DEVICE)
 
 # create, track & run a model with sgd under a specific learning rate
 root = os.getcwd()

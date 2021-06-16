@@ -1,7 +1,7 @@
 import unittest
 import torch
 import torch.distributions as td
-from src.BO import BayesianOptimizer
+from src.bo import BayesianOptimizer
 import os
 import matplotlib.pyplot as plt
 import matplotlib

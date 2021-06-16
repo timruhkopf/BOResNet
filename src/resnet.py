@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from src.ResidualBlock import ResidualBlock
+from src.residualblock import ResidualBlock
 
 
 class ResNet(nn.Module):

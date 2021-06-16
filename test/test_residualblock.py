@@ -5,7 +5,7 @@ import torch.nn as nn
 import os
 from copy import deepcopy
 
-from src.ResidualBlock import ResidualBlock
+from src.residualblock import ResidualBlock
 from src.utils import load_npz_kmnist
 
 

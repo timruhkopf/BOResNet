@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from copy import deepcopy
-from src.ResNet import ResNet
+from src.resnet import ResNet
 
 
 class Test_ResidualBlock(unittest.TestCase):

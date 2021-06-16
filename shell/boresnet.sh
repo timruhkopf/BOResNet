@@ -13,7 +13,7 @@ module purge
 #module --ignore-cache load cuda90/nsight
 #module --ignore-cache load cuda90/profiler
 
-# GWDDG tutorial on tensorflow
+# GWDG tutorial on tensorflow
 # module load cuda90/toolkit/9.0.176
 # module load cuda90/blas/9.0.176
 # module load cudnn/90v7.3.1
