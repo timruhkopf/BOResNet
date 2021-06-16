@@ -83,7 +83,11 @@ hyperparameter.
 Since the Optimisation Problem at hand is 1d, the current implementation is
 confined to such spaces. Target is to find the lambda, that minimizes the loss
 function. It does so, by inquiring the first lambda's cost by a randomly chosen
-lambda on the provided 1d search space. with this observation, a Gaussian
+lambda on the provided 1d search space (Top-left image). 
+
+![alt text](./Plots/bo_example-1.png "Title")
+
+With this observation, a Gaussian
 Process (here: using ELBO for optimization) can be utilized to approximate the
 cost function. Using the GP and its assumption on the
 (spatial) correlation structure, both a mean prediction for the function can be
