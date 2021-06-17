@@ -18,6 +18,9 @@ module purge
 # module load cuda90/blas/9.0.176
 # module load cudnn/90v7.3.1
 
+# GWDG tutorial on pytorch:
+module load cuda10.1/toolkit/10.1.105
+
 # NOTICE Execution via bash shell/Jobs/Unittests.sh
 # install packages:
 module load python/3.9.0 # remember to load this before calling python3!
