@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p gpu
-#SBATCH -t 12:00:00
+#SBATCH -t 04:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=BoResnet
 #SBATCH --output=BoResnet.%j.out

@@ -19,7 +19,7 @@ torch.manual_seed(0)
 
 # (0) Setup your computation device / plotting method. ------------------------
 TEST = False
-RUNIDX = 1
+RUNIDX = 2
 
 BATCH_SIZE = 4
 EPOCHS = 5
