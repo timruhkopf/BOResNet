@@ -242,7 +242,7 @@ class BayesianOptimizer:
         argmax = u.max(0)[1]
         return lamb[argmax].reshape((1,))  # = lamb*
 
-    def optimize(self, eps=0., initial_lamb=None):
+    def optimize(self, eps=0., initial_lamb=None, noise=0.):
         """
         Execute bayesian optimization on the provided closure.
 
@@ -268,6 +268,8 @@ class BayesianOptimizer:
         EI towards exploration or exploitation.
         :param initial_lamb: torch.Tensor. optional initial guess. Default
         is sampling a value uniformly from the search space.
+        :param noise: float. assumed noise level in the gaussian processes
+        estimate of the cost (=loss) function.
         :return: The incumbent; i.e. the hyperparameter, that minimizes the
         cost function.
         """
@@ -293,7 +295,8 @@ class BayesianOptimizer:
             # TODO find a third party implementation, that allows online
             #  computation (adding new values rather than creating an
             #  entirely new GP
-            self.gaussian_process(X=self.inquired[:t], y=self.cost[:t])
+            self.gaussian_process(X=self.inquired[:t], y=self.cost[:t],
+                                  noise=noise)
 
             # Select next point to query.
             # TODO move precision to self.optimize arguments
