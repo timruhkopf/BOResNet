@@ -19,7 +19,13 @@ module purge
 # module load cudnn/90v7.3.1
 
 # GWDG tutorial on pytorch:
-#module load cuda10.1/toolkit/10.1.105
+module load singularity
+singularity pull --name Pytorch_DL_HPC.sif shub://masoudrezai/Singularity:13
+
+module load singularity
+module load gcc/9.2.0
+module load cuda10.1/toolkit/10.1.105
+module load openmpi/gcc/64/4.0.3_cuda-10.1
 
 # GWDG MAIL
 #module load anaconda3/2020.11
