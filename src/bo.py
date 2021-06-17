@@ -1,13 +1,13 @@
 import torch
-# import torch.nn as nn
 import torch.distributions as td
-# from torch.optim import SGD
 import pyro
 import pyro.contrib.gp as gp
-import pyro.distributions as dist
+# For GP-MAP estimate's hyperpriors:
+# import pyro.distributions as dist
 from math import pi
 import matplotlib.pyplot as plt
 
+# For train-progressbar during testing
 # from tqdm import tqdm
 
 
@@ -47,7 +47,6 @@ class BayesianOptimizer:
         self.fig, self.axes = plt.subplots(nrows, 2, sharex=True)
         self.axes = self.axes.flatten()
         title = 'Bayesian Optimization for steps 2-{}'
-        # self.fig.set_figheight( self.budget)
         self.fig.suptitle(title.format(budget))
         self.fig_handle = {}
 
