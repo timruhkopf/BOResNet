@@ -9,9 +9,9 @@
 
 # requiries
 module purge
-module --ignore-cache load cuda90/fft
-module --ignore-cache load cuda90/nsight
-module --ignore-cache load cuda90/profiler
+#module --ignore-cache load cuda90/fft
+#module --ignore-cache load cuda90/nsight
+#module --ignore-cache load cuda90/profiler
 
 # GWDG tutorial on tensorflow
 # module load cuda90/toolkit/9.0.176
@@ -44,7 +44,7 @@ module load python/3.9.0 # remember to load this before calling python3!
 # python3 -m pip install git+https://github.com/AdamCobb/hamiltorch # 3rd party
 
 echo 'currently at dir: ' $PWD
-echo 'be aware to change to /BOResNet/ and start script using "bash shell/Jobs/Unittests.sh"'
+#echo 'be aware to change to /BOResNet/ and start script using "bash shell/Jobs/Unittests.sh"'
 #cd /home/tim/PycharmProjects/BOResNet/
 
 # make sure not to add .py ending when calling a module file
