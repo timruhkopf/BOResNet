@@ -92,8 +92,8 @@ x_test = torch.unsqueeze(x_test, dim=1)
 # descriptive info of the dataset
 print("y's shape: {}\nx's shape: {}".format(y_train.shape, x_train.shape))
 
-x_train, x_test, y_train, y_test = x_train.to(DEVICE), x_test.to(
-    DEVICE), y_train.to(DEVICE), y_test.to(DEVICE)
+# x_train, x_test, y_train, y_test = x_train.to(DEVICE), x_test.to(
+#     DEVICE), y_train.to(DEVICE), y_test.to(DEVICE)
 
 # create Dataset & dataloader for Train & Test.
 trainset = TensorDataset(x_train, y_train)
@@ -116,7 +116,7 @@ modeldir = root + '/models/fullrun{}'.format(RUNIDX)
 Path(modeldir).mkdir(parents=True, exist_ok=True)
 pipe = BlackBoxPipe(
     resnet, trainloader, testloader, epochs=EPOCHS,
-    path=modeldir + '/model_')
+    path=modeldir + '/model_', device=DEVICE)
 
 # check consecutive runs are tracked
 # pipe.evaluate_model_with_SGD(lr=0.001)
