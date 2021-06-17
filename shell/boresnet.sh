@@ -19,7 +19,11 @@ module purge
 # module load cudnn/90v7.3.1
 
 # my attempt
+module avail cuda  # cuda/10.1.243    cuda/10.2.89    cuda/11.1.0
+module avail gcc  # gcc/7.5.0    gcc/8.4.0    gcc/9.3.0    gcc/10.2.0 (D)
+
 module load cuda/11.1.0
+module load gcc/10.2.0
 
 # GWDG tutorial on pytorch:
 
