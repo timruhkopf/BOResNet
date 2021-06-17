@@ -9,6 +9,5 @@
 
 module load python/3.9.0
 
-python3 -m hello_world.py &>/usr/users/truhkop/BOResNet/consolelog_hello_world.out
-
+python3 -m hello_world
 wait
