@@ -89,7 +89,8 @@ class BlackBoxPipe:
                 loss.backward()
                 optimizer.step()
 
-                if i % 1000:
+                # write out every 1000's step
+                if i % 1000 == 0:
                     train_idx = int(i + len(self.trainloader) * epoch)
                     self.trainlosses[-1][train_idx] = loss
 

@@ -19,7 +19,7 @@ torch.manual_seed(0)
 
 # (0) Setup your computation device / plotting method. ------------------------
 TEST = False
-RUNIDX = 2
+RUNIDX = 3 # Run name
 
 BATCH_SIZE = 4
 EPOCHS = 5
@@ -32,11 +32,11 @@ BUDGET = 10
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-# Fullrun setup.
+# Fullrun setup. resnet11
 resnet_config = dict(img_size=(28, 28),
                      architecture=(
-                         (1, 16), (16, 16, 16), (16, 16, 16), (16, 16, 16),
-                         (16, 32, 32), (32, 32, 32), (32, 64, 64)),
+                         (1, 8), (8, 16, 16), (16, 16, 16), (16, 16, 16),
+                         (16, 32, 32), (32, 32, 32)),
                      no_classes=10)
 
 if TEST:
