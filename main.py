@@ -56,9 +56,6 @@ x_train, x_test, y_train, y_test = load_npz_kmnist(
     files=['kmnist-train-imgs.npz', 'kmnist-test-imgs.npz',
            'kmnist-train-labels.npz', 'kmnist-test-labels.npz'])
 
-x_train, x_test, y_train, y_test = x_train.to(DEVICE), x_test.to(
-    DEVICE), y_train.to(DEVICE), y_test.to(DEVICE)
-
 # perfectly balanced training /test datasets
 # --> use accuracy as quality measure
 # import pandas as pd
@@ -95,16 +92,19 @@ x_test = torch.unsqueeze(x_test, dim=1)
 # descriptive info of the dataset
 print("y's shape: {}\nx's shape: {}".format(y_train.shape, x_train.shape))
 
+x_train, x_test, y_train, y_test = x_train.to(DEVICE), x_test.to(
+    DEVICE), y_train.to(DEVICE), y_test.to(DEVICE)
+
 # create Dataset & dataloader for Train & Test.
 trainset = TensorDataset(x_train, y_train)
 testset = TensorDataset(x_test, y_test)
 
 trainloader = DataLoader(
     trainset, batch_size=BATCH_SIZE,
-    shuffle=True, num_workers=1)
+    shuffle=True, num_workers=0)
 testloader = DataLoader(
     testset, batch_size=BATCH_SIZE,
-    shuffle=True, num_workers=1)
+    shuffle=True, num_workers=0)
 
 # Model setup
 resnet = ResNet(**resnet_config)
