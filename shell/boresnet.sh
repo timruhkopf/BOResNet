@@ -9,9 +9,9 @@
 
 # requiries
 module purge
-#module --ignore-cache load cuda90/fft
-#module --ignore-cache load cuda90/nsight
-#module --ignore-cache load cuda90/profiler
+module --ignore-cache load cuda90/fft
+module --ignore-cache load cuda90/nsight
+module --ignore-cache load cuda90/profiler
 
 # GWDG tutorial on tensorflow
 # module load cuda90/toolkit/9.0.176
@@ -19,19 +19,19 @@ module purge
 # module load cudnn/90v7.3.1
 
 # GWDG tutorial on pytorch:
-module load cuda10.1/toolkit/10.1.105
+#module load cuda10.1/toolkit/10.1.105
 
 # GWDG MAIL
-module load anaconda3/2020.11
-conda create -n --prefix /BOResNet/venv python=3.9.0
-conda acticate /BOResNet/venv
-conda install -c gwerbin pyro-ppl
-conda install -c soumith pytorch
+#module load anaconda3/2020.11
+#conda create -n --prefix /BOResNet/venv python=3.9.0
+#conda activate /BOResNet/venv
+#conda install -c gwerbin pyro-ppl
+#conda install -c soumith pytorch
 
 # NOTICE Execution via bash shell/Jobs/Unittests.sh
 # install packages:
-# module load python/3.9.0 # remember to load this before calling python3!
- python3 -m  pip install torch  # when it was not installed previously
+module load python/3.9.0 # remember to load this before calling python3!
+# python3 -m  pip install torch  # when it was not installed previously
 # python3 -m pip install pyro-ppl
 # python3 -m pip install numpy
 # python3 -m pip install matplotlib
