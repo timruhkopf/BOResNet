@@ -5,7 +5,8 @@ import datetime
 
 
 class BlackBoxPipe:
-    def __init__(self, model, trainloader, testloader, epochs, path=None):
+    def __init__(self, model, trainloader, testloader, epochs,
+                 device, path=None):
         """
         BlackBoxpipe is a naive tracer class to gather all the information
         across individual calls to the evaluate_model_with_SGD function.
@@ -14,6 +15,7 @@ class BlackBoxPipe:
         :param trainloader: Instance to torch.utils.data.Dataloader.
         :param testloader: Instance to torch.utils.data.Dataloader.
         :param epochs: int. Number of cycles through trainloader.
+        :param device: the device that is used for computation during training
         :param path: str. path to a folder/modelbase name, i.e. all models are
         saved to this folder using the modelbase name and a time stamp.
         """
@@ -29,6 +31,7 @@ class BlackBoxPipe:
         self.acc = []
 
         self.path = path
+        self.device = device
 
     def evaluate_model_with_SGD(self, lr):
         """
@@ -76,8 +79,8 @@ class BlackBoxPipe:
         self.model.train()
         for epoch in range(self.epochs):
             for i, (images, labels) in enumerate(self.trainloader):
-                # images.to(device)
-                # labels.to(device)
+                images.to(self.device)
+                labels.to(self.device)
 
                 optimizer.zero_grad()
                 y_pred = self.model.forward(images)
@@ -105,6 +108,8 @@ class BlackBoxPipe:
         self.model.eval()
         with torch.no_grad():
             for x, y in self.testloader:
+                x.to(self.device)
+                y.to(self.device)
                 scores = self.model(x)
                 _, predictions = scores.max(1)
                 num_correct += (predictions == y).sum()
