@@ -39,6 +39,6 @@ echo 'current commit: ' $COMMIT_ID
 
 
 # make sure not to add .py ending when calling a module file
-python3 -m main #&>/usr/users/truhkop/BOResNet/consolelog.out
+python3 -m main &>/usr/users/truhkop/BOResNet/consolelog_main.out
 
 wait
