@@ -46,8 +46,8 @@ class ResNet(nn.Module):
 
         # "In"-part of the NN without skip connections.
         self.layers = [nn.Conv2d(*architecture[0], kernel_size=7, padding=1),
-                       nn.MaxPool2d(2, 2),
-                       nn.ReLU()]
+                       nn.ReLU(),
+                       nn.MaxPool2d(2, 2)]
 
         # Residual block expansion incl. solid & dashed lines.
         self.layers.extend([ResidualBlock(channels, kernel_size=3)

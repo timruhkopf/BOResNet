@@ -91,20 +91,23 @@ testloader = DataLoader(
 #     img_size=(28, 28),
 #     architecture=((1, 8), (8, 8, 8), (8, 16, 16)),
 #     no_classes=10)
+#
+# resnet9 = ResNet(
+#     img_size=(28, 28),
+#     architecture=((1, 16), (16, 16, 16), (16, 16, 16), (16, 32, 32),
+#                   (32, 32, 32), (32, 64, 64)),
+#     no_classes=10)
+#
+# resnet9.to(DEVICE)
 
-resnet9 = ResNet(
-    img_size=(28, 28),
-    architecture=((1, 16), (16, 16, 16), (16, 16, 16), (16, 32, 32),
-                  (32, 32, 32), (32, 64, 64)),
-    no_classes=10)
-
-resnet9.to(DEVICE)
+from src.hardcodedresnet import HardcodedResNet
+resnet = HardcodedResNet(28, 10, cunits=(1, 8, 8, 8, 16, 16, 16))
 
 # create, track & run a model with sgd under a specific learning rate
 root = os.getcwd()
 runs = BlackBoxPipe(
-    resnet9, trainloader, testloader, epochs=2,
-    path=root + '/models/fullrun/model_')
+    resnet, trainloader, testloader, epochs=2,
+    path=root + '/models/fullrun_hardcoded/model_')
 
 # runs.evaluate_model_with_SGD(lr=0.001)
 # runs.evaluate_model_with_SGD(lr=0.005)
@@ -121,7 +124,7 @@ bo.optimize(eps=0., initial_lamb=0.01)
 
 root = os.getcwd()
 # bo.fig.legend()  # FIXME: add legend to the plot
-bo.fig.savefig(root + '/Plots/bo_fullrun.pdf', bbox_inches='tight')
+bo.fig.savefig(root + '/Plots/bo_fullrun_hardcoded.pdf', bbox_inches='tight')
 # print()
 
 #
