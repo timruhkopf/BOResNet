@@ -8,7 +8,7 @@ import pyro.distributions as dist
 from math import pi
 import matplotlib.pyplot as plt
 
-from tqdm import tqdm
+# from tqdm import tqdm
 
 
 class BayesianOptimizer:
@@ -289,7 +289,7 @@ class BayesianOptimizer:
         self.inc_idx = 0
 
         # Optimize lamb using the budget of function evaluations
-        for t in tqdm(range(1, self.budget + 1)):
+        for t in range(1, self.budget + 1): #tqdm(range(1, self.budget + 1)):
             print('Current incumbent: {} '.format(self.incumbent))
             # Fit predictive model
             # TODO find a third party implementation, that allows online
