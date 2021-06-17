@@ -13,11 +13,11 @@ from src.bo import BayesianOptimizer
 
 matplotlib.use('Agg')
 
-# seeding for reproducibility
+# Seeding for reproducibility.
 pyro.set_rng_seed(0)
 torch.manual_seed(0)
 
-# setup your computation device / plotting method
+# (0) Setup your computation device / plotting method. ------------------------
 TEST = False
 RUNIDX = 1
 
@@ -32,7 +32,7 @@ BUDGET = 10
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-# fullrunsetup
+# Fullrun setup.
 resnet_config = dict(img_size=(28, 28),
                      architecture=(
                          (1, 16), (16, 16, 16), (16, 16, 16), (16, 16, 16),
@@ -48,7 +48,7 @@ if TEST:
                          architecture=((1, 2), (2, 2, 2)),
                          no_classes=10)
 
-# (0) loading data & preporcessing according to
+# (1) loading data & preprocessing according to
 # https://github.com/rois-codh/kmnist/blob/master/benchmarks/kuzushiji_mnist_cnn.py
 # Load the data
 x_train, x_test, y_train, y_test = load_npz_kmnist(
@@ -62,9 +62,8 @@ x_train, x_test, y_train, y_test = load_npz_kmnist(
 # pd.Series(y_train.numpy()).value_counts()
 # pd.Series(y_test.numpy()).value_counts()
 
-# testing if training starts at all
 
-# for testing purposes
+# Test training.
 if TEST:
     n = 100  # len(x_train)
     x_train = x_train[:n]
@@ -72,30 +71,28 @@ if TEST:
     x_test = x_test[:int(n / 10)]
     y_test = y_test[:int(n / 10)]
 
-# plot an example image
+# Plot an example image.
 # plot_kmnist(x_train, y_train,
 #             labelpath=root_data + 'kmnist_classmap.csv',
 #             idx=2)
 
-# adjust X to 0 - 1 range
+# (2) Adjust the Data & create datapipeline. ----------------------------------
+# Adjust X to 0 - 1 range.
 x_train /= 255.
 x_test /= 255.
 
-# convert y float to int
+# Convert y float to int.
 y_train = y_train.type(torch.LongTensor)
 y_test = y_test.type(torch.LongTensor)
 
-# add channel information (greyscale image)
+# Add channel information/dim (greyscale image).
 x_train = torch.unsqueeze(x_train, dim=1)
 x_test = torch.unsqueeze(x_test, dim=1)
 
-# descriptive info of the dataset
+# Descriptive info of the dataset.
 print("y's shape: {}\nx's shape: {}".format(y_train.shape, x_train.shape))
 
-# x_train, x_test, y_train, y_test = x_train.to(DEVICE), x_test.to(
-#     DEVICE), y_train.to(DEVICE), y_test.to(DEVICE)
-
-# create Dataset & dataloader for Train & Test.
+# Create Dataset & dataloader for train & test.
 trainset = TensorDataset(x_train, y_train)
 testset = TensorDataset(x_test, y_test)
 
@@ -106,11 +103,12 @@ testloader = DataLoader(
     testset, batch_size=BATCH_SIZE,
     shuffle=True, num_workers=0)
 
-# Model setup
+# (3) Model setup.
 resnet = ResNet(**resnet_config)
 resnet.to(DEVICE)
 
-# create, track & run a model with sgd under a specific learning rate
+# (4) Create, track & run-config for a model with sgd under a specific
+# learning rate.
 root = os.getcwd()
 modeldir = root + '/models/fullrun{}'.format(RUNIDX)
 Path(modeldir).mkdir(parents=True, exist_ok=True)
@@ -118,11 +116,11 @@ pipe = BlackBoxPipe(
     resnet, trainloader, testloader, epochs=EPOCHS,
     path=modeldir + '/model_', device=DEVICE)
 
-# check consecutive runs are tracked
+# Check consecutive runs are tracked.
 # pipe.evaluate_model_with_SGD(lr=0.001)
 # pipe.evaluate_model_with_SGD(lr=0.005)
 
-# pass closure object to BO, which is the bridge from the model to bo
+# (5) Pass closure object to BO, which is the bridge from the model to bo.
 bo_config = dict(
     search_space=SEARCH_SPACE,
     budget=BUDGET)
@@ -132,12 +130,12 @@ bo = BayesianOptimizer(
 
 bo.optimize(eps=EPS, initial_lamb=INIT_LAMB, noise=NOISE)
 
-# write out the final image
+# Write out the final image.
 root = os.getcwd()
 bo.fig.savefig(root + '/Plots/bo_fullrun{}.pdf'.format(RUNIDX),
                bbox_inches='tight')
 
-# write out the configs & interesting rundata
+# Write out the configs & interesting run-data.
 pickledict = dict(
     resnet_confit=resnet_config,
     bo_config=bo_config,
@@ -157,6 +155,7 @@ with open(filename, 'wb') as handle:
     pickle.dump(pickledict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 if TEST:
+    # Load pickle & analyse it.
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
