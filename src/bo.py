@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 
 class BayesianOptimizer:
-    def __init__(self, search_space, budget, closure, scale='ident'):
+    def __init__(self, search_space, budget, closure):
         """
         Bayesian Optimization working on a 1d search space.
 
@@ -30,8 +30,6 @@ class BayesianOptimizer:
         """
         self.budget = budget - 1
         self.closure = closure
-
-        self.scale = scale
 
         if search_space[0] > search_space[1]:
             msg = 'Searchspace Argument order is not correct: (lower, upper)'

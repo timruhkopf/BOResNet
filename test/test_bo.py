@@ -92,7 +92,7 @@ class Test_BO(unittest.TestCase):
         bo = BayesianOptimizer(
             search_space=SEARCH_SPACE,
             budget=BUDGET,
-            closure=h,
+            closure=g,
             scale=None)
 
         bo.optimize(initial_lamb=INIT_lAMB, eps=EPS, noise=NOISE)
