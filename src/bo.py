@@ -331,6 +331,8 @@ class BayesianOptimizer:
                          acquisition=True)
 
             # Query cost function.
+            # FIXME: power of 10 transform is hard coded, assuming
+            #  the actual search_space to be 10**search_space
             self.cost[t] = self.closure(10 ** lamb.data.numpy()[0])
 
             # Replace the incumbent if necessary.
@@ -347,5 +349,5 @@ class BayesianOptimizer:
                         prop={'size': 6})  # scale the legend
 
         print('Final Incumbent: {}, \nInquired: {}\nAt cost: {}'.format(
-            10 ** self.incumbent, 10**self.inquired, self.cost))
+            10 ** self.incumbent, 10 ** self.inquired, self.cost))
         return self.incumbent

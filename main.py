@@ -23,7 +23,7 @@ RUNIDX = 'logscale_powers_of10'  # Run name
 
 BATCH_SIZE = 4
 EPOCHS = 5
-INIT_LAMB = 0.01
+INIT_LAMB = -3 #0.01
 EPS = 0.
 NOISE = 0.
 # SEARCH_SPACE = (10e-5, 10e-1)

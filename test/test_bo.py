@@ -115,6 +115,8 @@ class Test_BO(unittest.TestCase):
                        bbox_inches='tight')
         plt.show()
 
+        # TODO write a viable test from this, that is not stochastic!
+
 
 if __name__ == '__main__':
     unittest.main(exit=False)
