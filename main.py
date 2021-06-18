@@ -7,23 +7,25 @@ import pickle
 from pathlib import Path
 
 from src.resnet import ResNet
-from src.utils import load_npz_kmnist, plot_kmnist
+from src.utils import load_npz_kmnist, plot_kmnist, get_git_revision_short_hash
 from src.blackboxpipe import BlackBoxPipe
 from src.bo import BayesianOptimizer
 
 matplotlib.use('Agg')
 
-# Seeding for reproducibility.
+# Seeding & githash for reproducibility.
 pyro.set_rng_seed(0)
 torch.manual_seed(0)
+git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
 TEST = False
-RUNIDX = 'logscale_powers_of10'  # Run name
+
+RUNIDX = 'logscale_powers_of10_{}'.format(git_hash)  # Run name
 
 BATCH_SIZE = 4
 EPOCHS = 5
-INIT_LAMB = -3 #0.01
+INIT_LAMB = -3  # 0.01
 EPS = 0.
 NOISE = 0.
 # SEARCH_SPACE = (10e-5, 10e-1)
@@ -111,7 +113,7 @@ resnet.to(DEVICE)
 # (4) Create, track & run-config for a model with sgd under a specific
 # learning rate.
 root = os.getcwd()
-modeldir = root + '/models/fullrun{}'.format(RUNIDX)
+modeldir = root + '/models/run{}'.format(RUNIDX)
 Path(modeldir).mkdir(parents=True, exist_ok=True)
 pipe = BlackBoxPipe(
     resnet, trainloader, testloader, epochs=EPOCHS,
@@ -133,7 +135,7 @@ bo.optimize(eps=EPS, initial_lamb=INIT_LAMB, noise=NOISE)
 
 # Write out the final image.
 root = os.getcwd()
-bo.fig.savefig(root + '/Plots/bo_fullrun{}.pdf'.format(RUNIDX),
+bo.fig.savefig(root + '/Plots/bo_run{}.pdf'.format(RUNIDX),
                bbox_inches='tight')
 
 # Write out the configs & interesting run-data.
@@ -145,14 +147,14 @@ pickledict = dict(
     costs=bo.cost,
     inquired=bo.inquired,
     accuracy=pipe.acc)
-    # pickle.load() fails to restore due to matplotlib.spines.
-    # bo_fig=bo.fig,
-    # bo_axes=bo.axes,
-    # bo_fig_handle=bo.fig_handle)
+# pickle.load() fails to restore due to matplotlib.spines.
+# bo_fig=bo.fig,
+# bo_axes=bo.axes,
+# bo_fig_handle=bo.fig_handle)
 
 modeldir = root + '/models/pickle/'
 Path(modeldir).mkdir(parents=True, exist_ok=True)
-filename = modeldir + '/fullrun{}.pkl'.format(RUNIDX)
+filename = modeldir + '/run{}.pkl'.format(RUNIDX)
 with open(filename, 'wb') as handle:
     pickle.dump(pickledict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -162,6 +164,7 @@ if TEST:
     import matplotlib
     import numpy as np
     import pickle
+
     root = os.getcwd()
     filename = root + '/models/server_return/pickle_fullrun3/fullrun3.pkl'
     with open(filename, 'rb') as handle:

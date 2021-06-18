@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
 
 
 # import pandas as pd
@@ -38,3 +39,12 @@ def plot_kmnist(x_array, y_array, idx, labelpath=None):
 
     plt.title('label class:{}'.format(y_array[idx]))
     plt.imshow(x_array[idx], cmap='gray')
+
+
+def get_git_revision_short_hash():
+    """
+    Get the current (short) commit-hash.
+    Code taken from https://stackoverflow.com/a/21901260.
+    """
+    return subprocess.check_output(
+        ['git', 'rev-parse', '--short', 'HEAD']).strip()
