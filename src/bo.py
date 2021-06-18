@@ -304,7 +304,7 @@ class BayesianOptimizer:
         else:
             self.inquired[0] = initial_lamb
 
-        self.cost[0] = self.closure(float(self.inquired[0].numpy()))
+        self.cost[0] = self.closure(float(10 **self.inquired[0].numpy()))
         self.incumbent = self.inquired[0]
         self.inc_idx = 0
 
