@@ -30,9 +30,16 @@ class Test_BO(unittest.TestCase):
 
     def test_bo_on_explicit_function(self):
         """
-        Using
+        Use explicit black box function Test_bo.c, that can be inquired
+        easily. This allows to look at the bo part (incl. GP configuration)
+        & ei more easily.
         :return:
         """
+        SEARCH_SPACE = (-5, 8)
+        BUDGET = 4
+        NOISE = 0.
+        INIT_lAMB = 0.01
+        EPS = 0.
         # # Plotting the exemplary function.
         # xs = torch.linspace(-2, 10, 10000)
         # plt.plot(xs, Test_BO.f(xs))
@@ -45,24 +52,62 @@ class Test_BO(unittest.TestCase):
 
         # plt.plot(lamb.numpy(), y.numpy(), 'kx')
 
-        bo = BayesianOptimizer(search_space=(-5, 8), budget=10,
-                               closure=Test_BO.c)
+        bo = BayesianOptimizer(
+            search_space=SEARCH_SPACE,
+            budget=BUDGET,
+            closure=Test_BO.c,
+            scale='ident')
 
         # X = td.Uniform(*(-5, 8)).sample([3])
         # y = Test_BO.c(X)
         # gpr = bo.gaussian_process(X=X, y=y)
         # bo.bo_plot(X, y, gpr, n_test=500, closure=Test_BO.c)
 
-        bo.optimize(initial_lamb=3., eps=0.1)
+        bo.optimize(initial_lamb=INIT_lAMB, eps=EPS, noise=NOISE)
 
-
+        plt.show()
 
         root = os.getcwd()
         bo.fig.savefig(root + '/testplot/bo_testrun.pdf', bbox_inches='tight')
 
-        print()
         # TODO write a viable test from this, that is not stochastic!
         # self.assertEqual(True, False, msg='')
+
+    def test_log_scale(self):
+        """
+        Look at a data example more similar to the learning rate: log scale
+        example.
+        """
+        SEARCH_SPACE = (10e-5, 10e-1)
+        # SEARCH_SPACE = (-5, -1)
+        BUDGET = 10
+        NOISE = 0.
+        INIT_lAMB = torch.distributions.Uniform(*SEARCH_SPACE).sample([1])
+        EPS = 0.
+
+        def g(x):
+            return (x -0.5)**2
+
+        # Plotting the function.
+        x = td.Uniform(*SEARCH_SPACE).sample([100])
+        y = g(x)
+        plt.scatter(x, y)
+        plt.show()
+        # plt.plot(x,y)
+        # plt.set_xscale('log')
+        # plt.grid(True, which="both")
+
+        bo = BayesianOptimizer(
+            search_space=SEARCH_SPACE,
+            budget=BUDGET,
+            closure=g,
+        scale='log')
+
+        bo.optimize(initial_lamb=INIT_lAMB, eps=EPS, noise=NOISE)
+        bo.estimated_gpr_param
+        # root = os.getcwd()
+        # bo.fig.savefig(root + '/testplot/bo_testrun.pdf', bbox_inches='tight')
+        plt.show()
 
 
 if __name__ == '__main__':
