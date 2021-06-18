@@ -86,7 +86,7 @@ class Test_BO(unittest.TestCase):
         EPS = 0.
 
         def g(x):
-            return (x -0.5)**2
+            return (x - 0.5) ** 2
 
         # Plotting the function.
         # x = td.Uniform(*SEARCH_SPACE).sample([100])
@@ -101,7 +101,7 @@ class Test_BO(unittest.TestCase):
             search_space=SEARCH_SPACE,
             budget=BUDGET,
             closure=g,
-        scale='log')
+            scale='log')
 
         bo.optimize(initial_lamb=INIT_lAMB, eps=EPS, noise=NOISE)
         bo.estimated_gpr_param

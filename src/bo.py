@@ -91,7 +91,7 @@ class BayesianOptimizer:
             input_dim=1, variance=torch.tensor(4.),
             lengthscale=torch.tensor(4.))
         self.gpr_t = gp.models.GPRegression(
-            X, #.log(),
+            X,  # .log(),
             y, kernel,
             noise=torch.tensor(noise),
             jitter=1e-5)  # stabilize choletzky decomposition
@@ -143,7 +143,7 @@ class BayesianOptimizer:
         :return: None, changes self.axes inplace.
         """
         # Plot the observed datapoints.
-        #ax.set_xscale(self.scale)
+        ax.set_xscale(self.scale)
         obs = ax.plot(X.numpy(), y.numpy(), 'kx', label='Observed')
 
         # Generate points at which GP is evaluated at for plotting.
@@ -153,7 +153,7 @@ class BayesianOptimizer:
 
         # Compute predictive mean and variance for each of test points.
         with torch.no_grad():
-            mean, cov = self.gpr_t(Xtest,# .log(),
+            mean, cov = self.gpr_t(Xtest,  # .log(),
                                    full_cov=True,
                                    noiseless=False)
 

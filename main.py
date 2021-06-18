@@ -19,7 +19,7 @@ torch.manual_seed(0)
 
 # (0) Setup your computation device / plotting method. ------------------------
 TEST = False
-RUNIDX = 'logscale1'  # Run name
+RUNIDX = 'logscale_2'  # Run name
 
 BATCH_SIZE = 4
 EPOCHS = 5
