@@ -40,6 +40,7 @@ class Test_BO(unittest.TestCase):
         NOISE = 0.
         INIT_lAMB = 0.01
         EPS = 0.
+
         # # Plotting the exemplary function.
         # xs = torch.linspace(-2, 10, 10000)
         # plt.plot(xs, Test_BO.f(xs))
@@ -50,18 +51,11 @@ class Test_BO(unittest.TestCase):
             0.01 * (lamb ** 4 - 8 * lamb ** 3 - 12 * lamb + 24) + 5,
             dtype=torch.float32)
 
-        # plt.plot(lamb.numpy(), y.numpy(), 'kx')
-
         bo = BayesianOptimizer(
             search_space=SEARCH_SPACE,
             budget=BUDGET,
             closure=Test_BO.c,
             scale='ident')
-
-        # X = td.Uniform(*(-5, 8)).sample([3])
-        # y = Test_BO.c(X)
-        # gpr = bo.gaussian_process(X=X, y=y)
-        # bo.bo_plot(X, y, gpr, n_test=500, closure=Test_BO.c)
 
         bo.optimize(initial_lamb=INIT_lAMB, eps=EPS, noise=NOISE)
 
@@ -71,7 +65,8 @@ class Test_BO(unittest.TestCase):
         bo.fig.savefig(root + '/testplot/bo_testrun.pdf', bbox_inches='tight')
 
         # TODO write a viable test from this, that is not stochastic!
-        # self.assertEqual(True, False, msg='')
+        #  use interval & seed to ensure the optimization proceeds
+        #  deterministically. Check that min is actually in intervall.
 
     def test_log_scale(self):
         """
@@ -86,17 +81,11 @@ class Test_BO(unittest.TestCase):
         EPS = 0.
 
         def g(x):
-            return 0.1 * (x - 0.5) ** 2
-
-        def h(x):
-            # ended up being a parable shaped function. originally intended
-            # to have multiple extrema
-            x1 = (x + 2)
-            return -0.01 * (x1 ** 3 - 6 * x1 ** 2 - 15 * x1 + 100) + 3
+            return 2000 * (x - 10 ** -2) ** 2
 
         # Plotting the function.
-        x = td.Uniform(*SEARCH_SPACE).sample([1000])
-        y = h(x)
+        x = td.Uniform(*(10 ** -5, 10 ** -1)).sample([1000])
+        y = g(x)
         plt.scatter(x.numpy(), y.numpy())
         plt.show()
 

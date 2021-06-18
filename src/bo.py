@@ -28,8 +28,6 @@ class BayesianOptimizer:
         :param closure: parametrized & callable function that is to be
         optimized
         """
-        # TODO check how to instantiate the model anew for each evaluation
-        #  of SGD with a specific learning rate!
         self.budget = budget - 1
         self.closure = closure
 
@@ -49,10 +47,10 @@ class BayesianOptimizer:
         # recomputing it.
         nrows = self.budget // 2 + self.budget % 2
 
-        self.fig, self.axes = plt.subplots(nrows, 2, sharex='col',
-                                           sharey=True)  # sharex=True,
-        # sharey=True)
+        self.fig, self.axes = plt.subplots(
+            nrows, 2, sharex='col', sharey=True)
         self.axes = self.axes.flatten()
+
         # Remove excess plot (if there is one)
         if self.budget % 2 > 0:
             self.fig.delaxes(self.axes[-1])
@@ -99,9 +97,7 @@ class BayesianOptimizer:
         # TODO consider storing & saving the gprs (for debug purposes)
 
         # Fitting GP using ELBO -----------------------------------------------
-        # DEPREC: ELBO is used only for estimating the hyperparams of GP.
-        # print('learnable_gp_params: {}'.format(list(
-        #     self.gpr_t.named_parameters())))
+        # ELOBO fits the hyperparameters variance & lengthscale.
         optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
         loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
         losses = []
@@ -324,7 +320,6 @@ class BayesianOptimizer:
             self.inquired[t] = lamb
 
             # Save current iter's bo_plot: the gp + acquisition function.
-            # TODO write out plot for t > 1
             self.bo_plot(X=self.inquired[:t],
                          y=self.cost[:t],
                          ax=self.axes[t - 1],
