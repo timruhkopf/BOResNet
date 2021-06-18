@@ -99,9 +99,7 @@ class BayesianOptimizer:
         # TODO consider storing & saving the gprs (for debug purposes)
 
         # Fitting GP using ELBO -----------------------------------------------
-        # DEPREC: ELBO is used only for estimating the hyperparams of GP.
-        # print('learnable_gp_params: {}'.format(list(
-        #     self.gpr_t.named_parameters())))
+        # ELOBO fits the hyperparameters variance & lengthscale
         optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
         loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
         losses = []

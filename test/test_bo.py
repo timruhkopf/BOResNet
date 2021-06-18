@@ -86,17 +86,12 @@ class Test_BO(unittest.TestCase):
         EPS = 0.
 
         def g(x):
-            return 0.1 * (x - 0.5) ** 2
+            return 2000 * (x - 10 ** -2) ** 2
 
-        def h(x):
-            # ended up being a parable shaped function. originally intended
-            # to have multiple extrema
-            x1 = (x + 2)
-            return -0.01 * (x1 ** 3 - 6 * x1 ** 2 - 15 * x1 + 100) + 3
+            # Plotting the function.
 
-        # Plotting the function.
-        x = td.Uniform(*SEARCH_SPACE).sample([1000])
-        y = h(x)
+        x = td.Uniform(*(10 ** -5, 10 ** -1)).sample([1000])
+        y = g(x)
         plt.scatter(x.numpy(), y.numpy())
         plt.show()
 
