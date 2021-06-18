@@ -19,14 +19,15 @@ torch.manual_seed(0)
 
 # (0) Setup your computation device / plotting method. ------------------------
 TEST = False
-RUNIDX = 'logscale_2'  # Run name
+RUNIDX = 'logscale_powers_of10'  # Run name
 
 BATCH_SIZE = 4
 EPOCHS = 5
 INIT_LAMB = 0.01
 EPS = 0.
 NOISE = 0.
-SEARCH_SPACE = (10e-5, 10e-1)
+# SEARCH_SPACE = (10e-5, 10e-1)
+SEARCH_SPACE = (-5, -1)
 BUDGET = 10
 
 ROOT_DATA = 'Data/Raw/'
@@ -149,7 +150,7 @@ pickledict = dict(
     # bo_axes=bo.axes,
     # bo_fig_handle=bo.fig_handle)
 
-modeldir = root + '/models/pickle/'.format(RUNIDX)
+modeldir = root + '/models/pickle/'
 Path(modeldir).mkdir(parents=True, exist_ok=True)
 filename = modeldir + '/fullrun{}.pkl'.format(RUNIDX)
 with open(filename, 'wb') as handle:

@@ -143,7 +143,7 @@ class BayesianOptimizer:
         :return: None, changes self.axes inplace.
         """
         # Plot the observed datapoints.
-        ax.set_xscale(self.scale)
+        # ax.set_xscale(self.scale)
         obs = ax.plot(X.numpy(), y.numpy(), 'kx', label='Observed')
 
         # Generate points at which GP is evaluated at for plotting.
@@ -331,7 +331,7 @@ class BayesianOptimizer:
                          acquisition=True)
 
             # Query cost function.
-            self.cost[t] = self.closure(lamb.data.numpy()[0])
+            self.cost[t] = self.closure(10 ** lamb.data.numpy()[0])
 
             # Replace the incumbent if necessary.
             self.incumbent, self.inc_idx, _ = min(
@@ -346,4 +346,6 @@ class BayesianOptimizer:
                         loc="center right",
                         prop={'size': 6})  # scale the legend
 
+        print('Final Incumbent: {}, \nInquired: {]\nAt cost: {}'.format(
+            10 ** self.incumbent, 10**self.inquired, self.cost))
         return self.incumbent
