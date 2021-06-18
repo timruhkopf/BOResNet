@@ -19,14 +19,14 @@ torch.manual_seed(0)
 
 # (0) Setup your computation device / plotting method. ------------------------
 TEST = False
-RUNIDX = 3 # Run name
+RUNIDX = 'logscale1'  # Run name
 
 BATCH_SIZE = 4
 EPOCHS = 5
 INIT_LAMB = 0.01
 EPS = 0.
-NOISE = 0.01
-SEARCH_SPACE = (0.001, 0.02)
+NOISE = 0.
+SEARCH_SPACE = (10e-5, 10e-1)
 BUDGET = 10
 
 ROOT_DATA = 'Data/Raw/'
@@ -143,10 +143,11 @@ pickledict = dict(
     incumbent=bo.incumbent,
     costs=bo.cost,
     inquired=bo.inquired,
-    accuracy=pipe.acc,
-    bo_fig=bo.fig,
-    bo_axes=bo.axes,
-    bo_fig_handle=bo.fig_handle)
+    accuracy=pipe.acc)
+    # pickle.load() fails to restore due to matplotlib.spines.
+    # bo_fig=bo.fig,
+    # bo_axes=bo.axes,
+    # bo_fig_handle=bo.fig_handle)
 
 modeldir = root + '/models/pickle/'.format(RUNIDX)
 Path(modeldir).mkdir(parents=True, exist_ok=True)
@@ -159,13 +160,18 @@ if TEST:
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
-
+    import pickle
+    root = os.getcwd()
+    filename = root + '/models/server_return/pickle_fullrun3/fullrun3.pkl'
     with open(filename, 'rb') as handle:
         b = pickle.load(handle)
+
+    df = pickle.load(open(filename, "rb"))
 
     print(b['incumbent'], '\n', b['inquired'])
 
     matplotlib.use('TkAgg')
+
     plt.plot(np.arange(len(b['losses'][0])),
              b['losses'][0].detach().numpy())
     plt.show()

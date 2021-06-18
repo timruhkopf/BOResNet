@@ -7,12 +7,13 @@ import pyro.contrib.gp as gp
 from math import pi
 import matplotlib.pyplot as plt
 
+
 # For train-progressbar during testing
 # from tqdm import tqdm
 
 
 class BayesianOptimizer:
-    def __init__(self, search_space, budget, closure):
+    def __init__(self, search_space, budget, closure, scale='ident'):
         """
         Bayesian Optimization working on a 1d search space.
 
@@ -32,6 +33,8 @@ class BayesianOptimizer:
         self.budget = budget - 1
         self.closure = closure
 
+        self.scale = scale
+
         if search_space[0] > search_space[1]:
             msg = 'Searchspace Argument order is not correct: (lower, upper)'
             raise ValueError(msg)
@@ -40,12 +43,19 @@ class BayesianOptimizer:
         # Sample the first data point at random.
         self.inquired = torch.zeros(budget)
         self.cost = torch.zeros(budget)
+        self.estimated_gpr_param = []
 
         # Plot preallocation to gather info along the way rather than
         # recomputing it.
         nrows = self.budget // 2 + self.budget % 2
-        self.fig, self.axes = plt.subplots(nrows, 2, sharex=True)
+
+        self.fig, self.axes = plt.subplots(nrows, 2, sharex='col',
+                                           sharey=True)  # sharex=True,
+        # sharey=True)
         self.axes = self.axes.flatten()
+        # Remove excess plot (if there is one)
+        if self.budget % 2 > 0:
+            self.fig.delaxes(self.axes[-1])
         title = 'Bayesian Optimization for steps 2-{}'
         self.fig.suptitle(title.format(budget))
         self.fig_handle = {}
@@ -53,7 +63,7 @@ class BayesianOptimizer:
         for ax in self.axes:
             ax.set_xlim(*search_space)
 
-    def gaussian_process(self, X, y, num_steps=2000, noise=0.):
+    def gaussian_process(self, X, y, num_steps=100, noise=0.):
         """
         Fit the Gaussian process to the observed data <X, y>.
         library for gp: https://pyro.ai/examples/gp.html
@@ -78,16 +88,20 @@ class BayesianOptimizer:
         # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
         #                         lengthscale=torch.tensor(10.))
         kernel = gp.kernels.Matern32(
-            input_dim=1, variance=torch.tensor(1.),
-            lengthscale=torch.tensor(1.))
+            input_dim=1, variance=torch.tensor(4.),
+            lengthscale=torch.tensor(4.))
         self.gpr_t = gp.models.GPRegression(
-            X, y, kernel,
+            X, #.log(),
+            y, kernel,
             noise=torch.tensor(noise),
-            jitter=1e-5)
+            jitter=1e-5)  # stabilize choletzky decomposition
 
         # TODO consider storing & saving the gprs (for debug purposes)
 
         # Fitting GP using ELBO -----------------------------------------------
+        # DEPREC: ELBO is used only for estimating the hyperparams of GP.
+        # print('learnable_gp_params: {}'.format(list(
+        #     self.gpr_t.named_parameters())))
         optimizer = torch.optim.Adam(self.gpr_t.parameters(), lr=0.005)
         loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
         losses = []
@@ -98,11 +112,12 @@ class BayesianOptimizer:
             optimizer.step()
             losses.append(loss.item())
 
-        msg = 'GP Parameter\n\tVariance: {}\n\tLengthscale: {}\n\tNoise: {}'
-        print(msg.format(
+        self.estimated_gpr_param.append([
             self.gpr_t.kernel.variance.item(),
             self.gpr_t.kernel.lengthscale.item(),
-            self.gpr_t.noise.item()))
+            self.gpr_t.noise.item()])
+        msg = 'GP Parameter\n\tVariance: {}\n\tLengthscale: {}\n\tNoise: {}'
+        print(msg.format(*self.estimated_gpr_param[-1]))
 
     def bo_plot(self, X, y, ax, acquisition=True, n_test=500,
                 closure=None):
@@ -128,6 +143,7 @@ class BayesianOptimizer:
         :return: None, changes self.axes inplace.
         """
         # Plot the observed datapoints.
+        #ax.set_xscale(self.scale)
         obs = ax.plot(X.numpy(), y.numpy(), 'kx', label='Observed')
 
         # Generate points at which GP is evaluated at for plotting.
@@ -137,12 +153,15 @@ class BayesianOptimizer:
 
         # Compute predictive mean and variance for each of test points.
         with torch.no_grad():
-            mean, cov = self.gpr_t(Xtest, full_cov=True, noiseless=False)
+            mean, cov = self.gpr_t(Xtest,# .log(),
+                                   full_cov=True,
+                                   noiseless=False)
 
             # Standard deviation at each input point x (testpoints).
             sd = cov.diag().sqrt()
 
         # Plot the GP mean prediction.
+        ax.set_ylabel('GP(lambda)')
         gp_mean = ax.plot(
             Xtest.numpy(), mean.numpy(), 'r',
             label='GP mean', lw=2)
@@ -156,14 +175,16 @@ class BayesianOptimizer:
             label='GP +/-2 * sd', color='C0', alpha=0.3)
 
         if acquisition:
-            ei = ax.plot(
+            ax_second_scale = ax.twinx()
+            ax_second_scale.set_ylabel('EI(lambda)')
+            ei = ax_second_scale.plot(
                 Xtest.numpy(),
                 self.expected_improvement(Xtest, eps=0),
                 label='EI')
 
             # TODO cache that value rather than recompute!
             next_lamb = self.max_ei(precision=50)
-            ei_max = ax.plot(
+            ei_max = ax_second_scale.plot(
                 next_lamb.numpy(),
                 self.expected_improvement(next_lamb, eps=0).numpy(),
                 'v', label='EI max')
@@ -288,14 +309,14 @@ class BayesianOptimizer:
         self.inc_idx = 0
 
         # Optimize lamb using the budget of function evaluations
-        for t in range(1, self.budget + 1): #tqdm(range(1, self.budget + 1)):
+        for t in range(1, self.budget + 1):  # tqdm(range(1, self.budget + 1)):
             print('Current incumbent: {} '.format(self.incumbent))
             # Fit predictive model
             # TODO find a third party implementation, that allows online
             #  computation (adding new values rather than creating an
             #  entirely new GP
             self.gaussian_process(X=self.inquired[:t], y=self.cost[:t],
-                                  noise=noise)
+                                  noise=noise, num_steps=100)
 
             # Select next point to query.
             # TODO move precision to self.optimize arguments
