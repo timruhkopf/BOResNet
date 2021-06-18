@@ -346,6 +346,6 @@ class BayesianOptimizer:
                         loc="center right",
                         prop={'size': 6})  # scale the legend
 
-        print('Final Incumbent: {}, \nInquired: {]\nAt cost: {}'.format(
+        print('Final Incumbent: {}, \nInquired: {}\nAt cost: {}'.format(
             10 ** self.incumbent, 10**self.inquired, self.cost))
         return self.incumbent

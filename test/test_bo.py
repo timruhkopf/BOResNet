@@ -110,8 +110,9 @@ class Test_BO(unittest.TestCase):
         bo.estimated_gpr_param
 
         10 ** bo.incumbent
-        # root = os.getcwd()
-        # bo.fig.savefig(root + '/testplot/bo_testrun.pdf', bbox_inches='tight')
+        root = os.getcwd()
+        bo.fig.savefig(root + '/testplot/bo_test_powersof10.pdf',
+                       bbox_inches='tight')
         plt.show()
 
 
