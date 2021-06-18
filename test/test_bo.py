@@ -78,33 +78,38 @@ class Test_BO(unittest.TestCase):
         Look at a data example more similar to the learning rate: log scale
         example.
         """
-        SEARCH_SPACE = (10e-5, 10e-1)
-        # SEARCH_SPACE = (-5, -1)
+        # SEARCH_SPACE = (10e-5, 10e-1)
+        SEARCH_SPACE = (-5, -1)
         BUDGET = 10
         NOISE = 0.
         INIT_lAMB = torch.distributions.Uniform(*SEARCH_SPACE).sample([1])
         EPS = 0.
 
         def g(x):
-            return (x - 0.5) ** 2
+            return 0.1 * (x - 0.5) ** 2
+
+        def h(x):
+            # ended up being a parable shaped function. originally intended
+            # to have multiple extrema
+            x1 = (x + 2)
+            return -0.01 * (x1 ** 3 - 6 * x1 ** 2 - 15 * x1 + 100) + 3
 
         # Plotting the function.
-        # x = td.Uniform(*SEARCH_SPACE).sample([100])
-        # y = g(x)
-        # plt.scatter(x, y)
-        # plt.show()
-        # plt.plot(x,y)
-        # plt.set_xscale('log')
-        # plt.grid(True, which="both")
+        x = td.Uniform(*SEARCH_SPACE).sample([1000])
+        y = h(x)
+        plt.scatter(x.numpy(), y.numpy())
+        plt.show()
 
         bo = BayesianOptimizer(
             search_space=SEARCH_SPACE,
             budget=BUDGET,
-            closure=g,
-            scale='log')
+            closure=h,
+            scale=None)
 
         bo.optimize(initial_lamb=INIT_lAMB, eps=EPS, noise=NOISE)
         bo.estimated_gpr_param
+
+        10 ** bo.incumbent
         # root = os.getcwd()
         # bo.fig.savefig(root + '/testplot/bo_testrun.pdf', bbox_inches='tight')
         plt.show()
