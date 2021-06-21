@@ -1,7 +1,9 @@
+import datetime
+import pickle
+
 import torch
 import torch.nn as nn
 from torch.optim import SGD
-import datetime
 
 from src.utils import get_git_revision_short_hash
 
@@ -153,3 +155,12 @@ class BlackBoxPipe:
         print('Finished testing')
 
         return avg_cost
+
+    def flush(self, path):
+        pickledict = dict(
+            trainlosses=self.trainlosses, lrs=self.lrs, costs=self.costs,
+            acc=self.acc, confusion_matrices=self.confusion_matrices)
+
+        filename = path + 'blackboxpipe.pkl'
+        with open(filename, 'wb') as handle:
+            pickle.dump(pickledict, handle, protocol=pickle.HIGHEST_PROTOCOL)
