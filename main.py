@@ -5,6 +5,7 @@ import matplotlib
 import os
 import pickle
 from pathlib import Path
+import datetime
 
 from src.resnet import ResNet
 from src.utils import load_npz_kmnist, plot_kmnist, get_git_revision_short_hash
@@ -19,54 +20,51 @@ torch.manual_seed(0)
 git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
-TEST = False
+TEST = True
+ROOT_DATA = 'Data/Raw/'
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-RUNIDX = 'logscale_powers_of10_{}'.format(git_hash)  # Run name
-
-BATCH_SIZE = 4
-EPOCHS = 5
 INIT_LAMB = -3  # 0.01
 EPS = 0.
 NOISE = 0.
 # SEARCH_SPACE = (10e-5, 10e-1)
 SEARCH_SPACE = (-5, -1)
-BUDGET = 10
-
-ROOT_DATA = 'Data/Raw/'
-DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-# Fullrun setup. resnet11
-resnet_config = dict(img_size=(28, 28),
-                     architecture=(
-                         (1, 8), (8, 16, 16), (16, 16, 16), (16, 16, 16),
-                         (16, 32, 32), (32, 32, 32)),
-                     no_classes=10)
 
 if TEST:
     BUDGET = 3
     EPOCHS = 1
     BATCH_SIZE = 1
-    # test_setup
+
     resnet_config = dict(img_size=(28, 28),
                          architecture=((1, 2), (2, 2, 2)),
                          no_classes=10)
 
+else:
+    # FULLRUN CONFIG
+    BATCH_SIZE = 4
+    EPOCHS = 5
+
+    BUDGET = 10
+
+    resnet_config = dict(img_size=(28, 28),
+                         architecture=(
+                             (1, 8), (8, 16, 16), (16, 16, 16), (16, 16, 16),
+                             (16, 32, 32), (32, 32, 32)),
+                         no_classes=10)
+
+# Define the Name of the RUN.
+s = '{:%Y%m%d_%H%M%S}'
+timestamp = s.format(datetime.datetime.now())
+RUNIDX = 'run_{}_{}'.format(git_hash, timestamp)  # Run name
+
 # (1) loading data & preprocessing according to
 # https://github.com/rois-codh/kmnist/blob/master/benchmarks/kuzushiji_mnist_cnn.py
-# Load the data
+# Load the data ---------------------------------------------------------------
 x_train, x_test, y_train, y_test = load_npz_kmnist(
     folder=ROOT_DATA,
     files=['kmnist-train-imgs.npz', 'kmnist-test-imgs.npz',
            'kmnist-train-labels.npz', 'kmnist-test-labels.npz'])
 
-# perfectly balanced training /test datasets
-# --> use accuracy as quality measure
-# import pandas as pd
-# pd.Series(y_train.numpy()).value_counts()
-# pd.Series(y_test.numpy()).value_counts()
-
-
-# Test training.
 if TEST:
     n = 100  # len(x_train)
     x_train = x_train[:n]
@@ -103,7 +101,7 @@ trainloader = DataLoader(
     trainset, batch_size=BATCH_SIZE,
     shuffle=True, num_workers=0)
 testloader = DataLoader(
-    testset, batch_size=BATCH_SIZE,
+    testset, batch_size=1,
     shuffle=True, num_workers=0)
 
 # (3) Model setup.

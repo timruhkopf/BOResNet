@@ -47,4 +47,4 @@ def get_git_revision_short_hash():
     Code taken from https://stackoverflow.com/a/21901260.
     """
     return subprocess.check_output(
-        ['git', 'rev-parse', '--short', 'HEAD']).strip()
+        ['git', 'rev-parse', '--short', 'HEAD']).strip().decode()
