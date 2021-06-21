@@ -256,7 +256,7 @@ class BayesianOptimizer:
         argmax = u.max(0)[1]
         return lamb[argmax].reshape((1,))  # = lamb*
 
-    def optimize(self, eps=0., initial_lamb=None, noise=0.):
+    def optimize(self, eps=0., initial_lamb=None, noise=0., plot=False):
         """
         Execute bayesian optimization on the provided closure.
 
@@ -317,11 +317,12 @@ class BayesianOptimizer:
             lamb = self.max_ei(precision=200, eps=eps)
             self.inquired[t] = lamb
 
-            # Save current iter's bo_plot: the gp + acquisition function.
-            self.bo_plot(X=self.inquired[:t],
-                         y=self.cost[:t],
-                         ax=self.axes[t - 1],
-                         acquisition=True)
+            if plot:
+                # Save current iter's bo_plot: the gp + acquisition function.
+                self.bo_plot(X=self.inquired[:t],
+                             y=self.cost[:t],
+                             ax=self.axes[t - 1],
+                             acquisition=True)
 
             # Query cost function.
             # FIXME: power of 10 transform is hard coded, assuming
@@ -334,12 +335,13 @@ class BayesianOptimizer:
                  (lamb.data, t, self.cost[t])],
                 key=lambda x: x[2])
 
-        # Place the legend with only one unique marker across all axes.
-        self.fig.subplots_adjust(right=0.85)
-        self.fig.legend(handles=self.fig_handle.values(),
-                        borderaxespad=0.1,
-                        loc="center right",
-                        prop={'size': 6})  # scale the legend
+        if plot:
+            # Place the legend with only one unique marker across all axes.
+            self.fig.subplots_adjust(right=0.85)
+            self.fig.legend(handles=self.fig_handle.values(),
+                            borderaxespad=0.1,
+                            loc="center right",
+                            prop={'size': 6})  # scale the legend
 
         print('Final Incumbent: {}, \nInquired: {}\nAt cost: {}'.format(
             10 ** self.incumbent, 10 ** self.inquired, self.cost))
