@@ -50,6 +50,9 @@ class BlackBoxPipe:
         :return: torch.Tensor. loss of the model trained with lr evaluated
         on the test model.
         """
+        # Reset the model to ensure independent observations
+        self.model.reset_parameters()
+
         optimizer = SGD(self.model.parameters(), lr=lr)
         loss_fn = nn.CrossEntropyLoss()
 
@@ -61,6 +64,7 @@ class BlackBoxPipe:
         self.trainlosses.append(torch.zeros(int(no_losses)))
         self.lrs.append(lr)
 
+        # Train and evaluate the model
         self.train(optimizer, loss_fn)
         cost = self.test(loss_fn)
 
@@ -73,7 +77,6 @@ class BlackBoxPipe:
             torch.save(self.model.state_dict(),
                        '{}/model_{}'.format(self.path, timestamp))
 
-        self.model.reset_parameters()
         return cost
 
     def train(self, optimizer, loss_fn):
@@ -140,8 +143,7 @@ class BlackBoxPipe:
 
         avg_cost = cost / num_samples
         acc = float(num_correct) / float(num_samples) * 100
-        print(f'Got {num_correct} / {num_samples} with accuracy '
-              f'{acc:.2f}')
+        print(f'Got {num_correct} / {num_samples} with accuracy {acc:.2f}')
 
         # Alternative way to calculate accuracy (from confusion).
         print('Confusion matrix:\n', self.confusion_matrices[-1])
