@@ -3,6 +3,8 @@ import torch.nn as nn
 from torch.optim import SGD
 import datetime
 
+from src.utils import get_git_revision_short_hash
+
 
 class BlackBoxPipe:
     def __init__(self, model, trainloader, testloader, epochs,
@@ -29,6 +31,10 @@ class BlackBoxPipe:
         self.lrs = []
         self.costs = []
         self.acc = []
+        self.confusion_matrices = []
+        self.trackstep = 1000
+
+        self.git_commit = get_git_revision_short_hash()
 
         self.path = path
         self.device = device
@@ -49,8 +55,9 @@ class BlackBoxPipe:
 
         # Pre-allocate a loss tensor for the current run
         # both for plotting purposes.
-        no_losses = (len(self.trainloader.dataset) *
-                     self.epochs / self.trainloader.batch_size)
+        no_losses = ((len(self.trainloader.dataset) * self.epochs
+                      / self.trainloader.batch_size)
+                     // self.trackstep) + 1  # at step 0 loss is evaluated!
         self.trainlosses.append(torch.zeros(int(no_losses)))
         self.lrs.append(lr)
 
@@ -60,9 +67,11 @@ class BlackBoxPipe:
         # Save the state of the model & reset the parameters
         # ensuring independent initialisation & model "realisations".
         if self.path is not None:
+            git_hash = get_git_revision_short_hash()
             s = '{:%Y%m%d_%H%M%S}'
             timestamp = s.format(datetime.datetime.now())
-            torch.save(self.model.state_dict(), self.path + timestamp)
+            torch.save(self.model.state_dict(),
+                       '{}/model_{}'.format(self.path, timestamp))
 
         self.model.reset_parameters()
         return cost
@@ -91,7 +100,8 @@ class BlackBoxPipe:
 
                 # write out every 1000's step
                 if i % 1000 == 0:
-                    train_idx = int(i + len(self.trainloader) * epoch)
+                    train_idx = (int(i + len(self.trainloader) * epoch)
+                                 // self.trackstep)
                     self.trainlosses[-1][train_idx] = loss
 
         print('Finished training')
@@ -108,6 +118,9 @@ class BlackBoxPipe:
         num_correct = 0
         num_samples = 0
         cost = 0.
+        self.confusion_matrices.append(
+            torch.zeros(self.model.no_classes, self.model.no_classes))
+
         self.model.eval()
         with torch.no_grad():
             for x, y in self.testloader:
@@ -120,10 +133,18 @@ class BlackBoxPipe:
 
                 cost += loss_fn(scores, y)
 
-        avg_cost = cost/num_samples
+                # Sort each prediction to the appropriate part of the
+                # confusion matrix. Works with batched input.
+                for t, p in zip(y.view(-1), predictions.view(-1)):
+                    self.confusion_matrices[-1][t.long(), p.long()] += 1
+
+        avg_cost = cost / num_samples
         acc = float(num_correct) / float(num_samples) * 100
         print(f'Got {num_correct} / {num_samples} with accuracy '
               f'{acc:.2f}')
+
+        # Alternative way to calculate accuracy (from confusion).
+        print('Confusion matrix:\n', self.confusion_matrices[-1])
 
         self.acc.append(acc)
         self.costs.append(avg_cost)
