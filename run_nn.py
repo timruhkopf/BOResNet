@@ -26,7 +26,7 @@ torch.manual_seed(0)
 git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
-TEST = False
+TEST = True
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -137,10 +137,20 @@ if TEST:
     # to be capable of instantating the class once more and load the info
     from src.blackboxpipe import BlackBoxPipe
     from src.resnet import ResNet
+    import seaborn as sns
+    import pandas as pd
+
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('TkAgg')
 
     with open(filename, 'rb') as handle:
         pipepickled = pickle.load(handle)
 
-
-
+    # plot the confusion matrix of the models
+    model_idx = 0
+    c_mat = pipepickled.confusion_matrices[model_idx]
+    confused = pd.DataFrame(c_mat.numpy())
+    sns.heatmap(confused, annot=True)
+    plt.show()
 
