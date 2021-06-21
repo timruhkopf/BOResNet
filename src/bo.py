@@ -84,13 +84,16 @@ class BayesianOptimizer:
         # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(5.),
         #                         lengthscale=torch.tensor(10.))
         kernel = gp.kernels.Matern32(
-            input_dim=1, variance=torch.tensor(4.),
-            lengthscale=torch.tensor(4.))
+            input_dim=1, variance=torch.tensor(0.5),
+            lengthscale=torch.tensor(0.1))
         self.gpr_t = gp.models.GPRegression(
             X,  # .log(),
             y, kernel,
             noise=torch.tensor(noise),
             jitter=1e-5)  # stabilize choletzky decomposition
+
+        self.gpr_t.X = torch.tensor([-3, -2])
+        self.gpr_t.y = torch.tensor([10, -2])
 
         # TODO consider storing & saving the gprs (for debug purposes)
 
@@ -298,7 +301,7 @@ class BayesianOptimizer:
         else:
             self.inquired[0] = initial_lamb
 
-        self.cost[0] = self.closure(float(10 **self.inquired[0].numpy()))
+        self.cost[0] = self.closure(float(10 ** self.inquired[0].numpy()))
         self.incumbent = self.inquired[0]
         self.inc_idx = 0
 

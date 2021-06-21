@@ -20,7 +20,7 @@ torch.manual_seed(0)
 git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
-TEST = False
+TEST = True
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -130,6 +130,7 @@ bo_config = dict(
 bo = BayesianOptimizer(
     **bo_config,
     closure=pipe.evaluate_model_with_SGD)
+
 
 bo.optimize(eps=EPS, initial_lamb=INIT_LAMB, noise=NOISE)
 
