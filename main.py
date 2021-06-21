@@ -20,7 +20,7 @@ torch.manual_seed(0)
 git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
-TEST = True
+TEST = False
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -56,6 +56,8 @@ else:
 s = '{:%Y%m%d_%H%M%S}'
 timestamp = s.format(datetime.datetime.now())
 RUNIDX = 'run_{}_{}'.format(git_hash, timestamp)  # Run name
+
+print(RUNIDX)
 
 # (1) loading data & preprocessing according to
 # https://github.com/rois-codh/kmnist/blob/master/benchmarks/kuzushiji_mnist_cnn.py
@@ -111,11 +113,11 @@ resnet.to(DEVICE)
 # (4) Create, track & run-config for a model with sgd under a specific
 # learning rate.
 root = os.getcwd()
-modeldir = root + '/models/run{}'.format(RUNIDX)
+modeldir = root + '/models/{}'.format(RUNIDX)
 Path(modeldir).mkdir(parents=True, exist_ok=True)
 pipe = BlackBoxPipe(
     resnet, trainloader, testloader, epochs=EPOCHS,
-    path=modeldir + '/model_', device=DEVICE)
+    path=modeldir, device=DEVICE)
 
 # Check consecutive runs are tracked.
 # pipe.evaluate_model_with_SGD(lr=0.001)
@@ -133,7 +135,7 @@ bo.optimize(eps=EPS, initial_lamb=INIT_LAMB, noise=NOISE)
 
 # Write out the final image.
 root = os.getcwd()
-bo.fig.savefig(root + '/Plots/bo_run{}.pdf'.format(RUNIDX),
+bo.fig.savefig('{}/bo_{}.pdf'.format(modeldir, RUNIDX),
                bbox_inches='tight')
 
 # Write out the configs & interesting run-data.
@@ -152,7 +154,7 @@ pickledict = dict(
 
 modeldir = root + '/models/pickle/'
 Path(modeldir).mkdir(parents=True, exist_ok=True)
-filename = modeldir + '/run{}.pkl'.format(RUNIDX)
+filename = modeldir + '/{}.pkl'.format(RUNIDX)
 with open(filename, 'wb') as handle:
     pickle.dump(pickledict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
