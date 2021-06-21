@@ -1,6 +1,6 @@
-import torch
 import pyro
 import pyro.contrib.gp as gp
+import torch
 
 
 class GaussianProcess:
@@ -36,4 +36,19 @@ class GaussianProcess:
             losses.append(loss.item())
 
         msg = 'GP Parameter\n\tVariance: {}\n\tLengthscale: {}\n\tNoise: {}'
-        print(msg.format(*self.estimated_gpr_param[-1]))
+        print(msg.format(
+            self.gpr_t.kernel.variance.item(),
+            self.gpr_t.kernel.lengthscale.item(),
+            self.gpr_t.noise.item()))
+
+    def predict(self, X):
+        with torch.no_grad():
+            mean, cov = self.gpr_t(X, full_cov=True, noiseless=False)
+            var = cov.diag()
+
+            # CAREFULL: pyros' GP may produce negative & zero variance
+            # predictions (~= -9e-7) ! to avoid producing nans in the following
+            # calculations, they are set to 1e-10 instead.
+            var[var <= 0] = 1e-10
+            sd = var.sqrt()
+        return mean, cov, sd

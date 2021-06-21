@@ -1,6 +1,8 @@
+from math import pi
+
 import torch
 import torch.distributions as td
-from math import pi
+
 
 class ExpectedImprovement:
     def eval(self, lamb, eps=0.):
@@ -18,14 +20,7 @@ class ExpectedImprovement:
         """
         with torch.no_grad():
             # Inquire the MAP estimate for mu^t(lamb), sd^t(lamb) from GP
-            mu_t, cov_t = self.gpr_t(lamb, full_cov=True, noiseless=False)
-            var = cov_t.diag()
-
-            # CAREFULL: pyros' GP may produce negative & zero variance
-            # predictions (~= -9e-7) ! to avoid producing nans in the following
-            # calculations, they are set to 1e-10 instead.
-            var[var <= 0] = 1e-10
-            sd_t = var.sqrt()
+            mu_t, sd_t = self.gpr_t.predict(lamb)
 
         # Calculate EI.
         Z = (self.cost[self.inc_idx] - mu_t - eps) / sd_t
