@@ -26,7 +26,7 @@ torch.manual_seed(0)
 git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
-TEST = True
+TEST = False
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -47,8 +47,8 @@ if TEST:
 
 else:
     # FULLRUN CONFIG
-    EPOCHS = 5
-    BATCH_SIZE = 4
+    EPOCHS = 10
+    BATCH_SIZE = 8
     BUDGET = 10
 
     resnet_config = dict(img_size=(28, 28),
@@ -120,7 +120,7 @@ pipe = BlackBoxPipe(
     resnet, trainloader, testloader, epochs=EPOCHS,
     path=modeldir, device=DEVICE)
 
-pipe.evaluate_model_with_SGD(0.003)
+# pipe.evaluate_model_with_SGD(0.003)
 pipe.evaluate_model_with_SGD(0.001)
 
 # remove the already written out model
@@ -139,11 +139,14 @@ if TEST:
     from src.resnet import ResNet
     import seaborn as sns
     import pandas as pd
-
     import matplotlib.pyplot as plt
     import matplotlib
+
     matplotlib.use('TkAgg')
 
+    modelfolder = ''
+    file = ''
+    filename = '{}/{}'.format(modelfolder, file )
     with open(filename, 'rb') as handle:
         pipepickled = pickle.load(handle)
 
@@ -153,4 +156,3 @@ if TEST:
     confused = pd.DataFrame(c_mat.numpy())
     sns.heatmap(confused, annot=True)
     plt.show()
-
