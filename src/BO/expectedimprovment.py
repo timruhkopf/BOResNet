@@ -56,10 +56,12 @@ class ExpectedImprovement:
         argmax = u.max(0)[1]
         return lamb[argmax].reshape((1,))  # = lamb*
 
+
+class ExpextedImprov_grad(ExpectedImprovement):
     def max_ei_multigrad(self):
         """
         Intent: create multiple initializations (e.g. 10 evenly spaced on
         search space & use e.g. ADAM with some no.steps to reach the opt.
         :return:
         """
-        pass
+        raise NotImplementedError()

@@ -52,3 +52,22 @@ class GaussianProcess:
             var[var <= 0] = 1e-10
             sd = var.sqrt()
         return mean, cov, sd
+
+
+class GP_constrained:
+    def __init__(self):
+        """
+        Consider unsing this GP implementation:
+        https://github.com/cagrell/gp_constr/blob/master/Example_1a.ipynb.
+        This would allow to constrain the GP to predict e.g. only positive
+        values for both mean & variance - which is handy if the cost
+        function (such as MSE or Crossentropy loss) is known to be strictly
+        positive.
+        """
+        raise NotImplementedError()
+
+    def fit_hyperparam(self):
+        raise NotImplementedError()
+
+    def predict(self):
+        raise NotImplementedError()
