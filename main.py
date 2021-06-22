@@ -162,6 +162,8 @@ if TEST:
     with open(filename, 'rb') as handle:
         d = pickle.load(handle)
 
+    # CONSIDER moving these plots to BlackBoxPipe (as it is the exact
+    #  procedure, that created the data.
     plt.plot(np.arange(len(d['trainlosses'][0])),
              d['trainlosses'][0].detach().numpy())
     plt.show()
