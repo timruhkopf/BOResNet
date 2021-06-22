@@ -157,10 +157,15 @@ class BlackBoxPipe:
         return avg_cost
 
     def flush(self, path):
+        """
+
+        :param path:
+        :return:
+        """
         pickledict = dict(
             trainlosses=self.trainlosses, lrs=self.lrs, costs=self.costs,
             acc=self.acc, confusion_matrices=self.confusion_matrices)
 
-        filename = path + 'blackboxpipe.pkl'
+        filename = path + '/blackboxpipe.pkl'
         with open(filename, 'wb') as handle:
             pickle.dump(pickledict, handle, protocol=pickle.HIGHEST_PROTOCOL)

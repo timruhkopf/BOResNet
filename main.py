@@ -1,6 +1,5 @@
 import datetime
 import os
-import pickle
 from pathlib import Path
 
 import matplotlib
@@ -8,12 +7,10 @@ import pyro
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
+from src.BO.bayesianoptimisation import BayesianOptimizer
 from src.blackboxpipe import BlackBoxPipe
-from src.bo import BayesianOptimizer
 from src.resnet import ResNet
 from src.utils import load_npz_kmnist, get_git_revision_short_hash
-
-matplotlib.use('Agg')
 
 # Seeding & githash for reproducibility.
 pyro.set_rng_seed(0)
@@ -30,15 +27,18 @@ EPS = 0.
 NOISE = 0.
 # SEARCH_SPACE = (10e-5, 10e-1)
 SEARCH_SPACE = (-5, -1)
+GPCONFIG = dict(initial_var=0.5, initial_length=0.5, noise=0.)
 
 if TEST:
-    BUDGET = 3
+    BUDGET = 4
     EPOCHS = 1
     BATCH_SIZE = 1
 
     resnet_config = dict(img_size=(28, 28),
                          architecture=((1, 2), (2, 2, 2)),
                          no_classes=10)
+
+    matplotlib.use('TkAgg')
 
 else:
     # FULLRUN CONFIG
@@ -52,6 +52,8 @@ else:
                              (1, 8), (8, 16, 16), (16, 16, 16), (16, 16, 16),
                              (16, 32, 32), (32, 32, 32)),
                          no_classes=10)
+
+    matplotlib.use('Agg')
 
 # Define the Name of the RUN.
 s = '{:%Y%m%d_%H%M%S}'
@@ -120,66 +122,51 @@ pipe = BlackBoxPipe(
     resnet, trainloader, testloader, epochs=EPOCHS,
     path=modeldir, device=DEVICE)
 
-# Check consecutive runs are tracked.
-# pipe.evaluate_model_with_SGD(lr=0.001)
-# pipe.evaluate_model_with_SGD(lr=0.005)
-
 # (5) Pass closure object to BO, which is the bridge from the model to bo.
 bo_config = dict(
     search_space=SEARCH_SPACE,
-    budget=BUDGET)
+    budget=BUDGET,
+    noise=NOISE)
 bo = BayesianOptimizer(
     **bo_config,
-    # FIXME: to optimize on log10 scale:
-    #  lambda x: pipe.evaluate_model_with_SGD(10**x)
-    closure=pipe.evaluate_model_with_SGD)
+    # To optimize on log10 scale: lambda function
+    closure=lambda x: pipe.evaluate_model_with_SGD(10 ** x))
 
-
-bo.optimize(eps=EPS, initial_lamb=INIT_LAMB, noise=NOISE)
+bo.optimize(eps=EPS, initial_guess=INIT_LAMB, gp_config=GPCONFIG)
+bo.plot_bo()
 
 # Write out the final image.
-root = os.getcwd()
-bo.fig.savefig('{}/bo_{}.pdf'.format(modeldir, RUNIDX),
-               bbox_inches='tight')
+bo.tracker.fig.savefig('{}/bo_{}.pdf'.format(modeldir, git_hash),
+                       bbox_inches='tight')
 
 # Write out the configs & interesting run-data.
-pickledict = dict(
-    resnet_confit=resnet_config,
-    bo_config=bo_config,
-    losses=pipe.trainlosses,
-    incumbent=bo.incumbent,
-    costs=bo.cost,
-    inquired=bo.inquired,
-    accuracy=pipe.acc)
-# pickle.load() fails to restore due to matplotlib.spines.
-# bo_fig=bo.fig,
-# bo_axes=bo.axes,
-# bo_fig_handle=bo.fig_handle)
-
-modeldir = root + '/models/pickle/'
-Path(modeldir).mkdir(parents=True, exist_ok=True)
-filename = modeldir + '/{}.pkl'.format(RUNIDX)
-with open(filename, 'wb') as handle:
-    pickle.dump(pickledict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+bo.tracker.save(modeldir)
+pipe.flush(modeldir)
 
 if TEST:
-    # Load pickle & analyse it.
-    import matplotlib.pyplot as plt
-    import matplotlib
-    import numpy as np
+    # RUN ONLY when on local machine
     import pickle
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    from src.BO.botracker import BoTracker
+
+    botracker = BoTracker.load(modeldir)
+    botracker.plot_bo()
 
     root = os.getcwd()
-    filename = root + '/models/server_return/pickle_fullrun3/fullrun3.pkl'
+    # filename = root + '/models/server_return/pickle_fullrun3/fullrun3.pkl'
+    file = 'blackboxpipe.pkl'
+    filename = '{}/models/{}/{}'.format(root, RUNIDX, file)
     with open(filename, 'rb') as handle:
-        b = pickle.load(handle)
+        d = pickle.load(handle)
 
-    df = pickle.load(open(filename, "rb"))
+    plt.plot(np.arange(len(d['trainlosses'][0])),
+             d['trainlosses'][0].detach().numpy())
+    plt.show()
 
-    print(b['incumbent'], '\n', b['inquired'])
-
-    matplotlib.use('TkAgg')
-
-    plt.plot(np.arange(len(b['losses'][0])),
-             b['losses'][0].detach().numpy())
+    plt.close()
+    confused = d['confusion_matrices'][0].numpy()
+    sns.heatmap(confused, annot=True)
     plt.show()
