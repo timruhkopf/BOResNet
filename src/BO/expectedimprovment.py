@@ -52,16 +52,16 @@ class ExpectedImprovement:
         lamb = torch.linspace(*self.search_space, steps=precision)
         u = self.expected_improvement(lamb, eps=eps)
 
-        # find lamb = argmax_{lamb} u(lamb)
+        # Find and return lamb = argmax_{lamb} u(lamb)
         argmax = u.max(0)[1]
-        return lamb[argmax].reshape((1,))  # = lamb*
+        return lamb[argmax].reshape((1,))
 
 
 class ExpextedImprov_grad(ExpectedImprovement):
     def max_ei_multigrad(self):
         """
-        Intent: create multiple initializations (e.g. 10 evenly spaced on
-        search space & use e.g. ADAM with some no.steps to reach the opt.
-        :return:
+        Intent: create multiple initializations (e.g. 10 evenly spaced or
+        randomly placed on search space & use e.g. ADAM with some no.steps to
+        reach the opt.
         """
         raise NotImplementedError()
