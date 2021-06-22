@@ -29,7 +29,6 @@ class Test_BoTracker(unittest.TestCase):
         # mkdir /gpr_models
         self.path = '/home/tim/PycharmProjects/BOResNet/test/tmp/'
         Path(self.path).mkdir(parents=True, exist_ok=True)
-        # Path(self.path).mkdir(parents=True, exist_ok=True)
 
     def tearDown(self) -> None:
         # TODO Clear the tmp folder

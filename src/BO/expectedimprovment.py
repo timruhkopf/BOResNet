@@ -64,4 +64,6 @@ class ExpextedImprov_grad(ExpectedImprovement):
         randomly placed on search space & use e.g. ADAM with some no.steps to
         reach the opt.
         """
+
+        # TODO check if still in search space!
         raise NotImplementedError()

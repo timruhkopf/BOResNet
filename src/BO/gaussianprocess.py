@@ -16,6 +16,10 @@ class GaussianProcess:
         kernel = gp.kernels.Matern32(
             input_dim=1, variance=torch.tensor(initial_var),
             lengthscale=torch.tensor(initial_length))
+
+        # kernel = gp.kernels.RBF(input_dim=1, variance=torch.tensor(initial_var),
+        #     lengthscale=torch.tensor(initial_length))
+
         self.gpr_t = gp.models.GPRegression(
             x, y, kernel,
             noise=torch.tensor(noise),

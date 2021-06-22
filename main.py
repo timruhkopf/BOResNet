@@ -1,16 +1,17 @@
-import torch
-from torch.utils.data import TensorDataset, DataLoader
-import pyro
-import matplotlib
+import datetime
 import os
 import pickle
 from pathlib import Path
-import datetime
 
-from src.resnet import ResNet
-from src.utils import load_npz_kmnist, plot_kmnist, get_git_revision_short_hash
+import matplotlib
+import pyro
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+
 from src.blackboxpipe import BlackBoxPipe
 from src.bo import BayesianOptimizer
+from src.resnet import ResNet
+from src.utils import load_npz_kmnist, get_git_revision_short_hash
 
 matplotlib.use('Agg')
 
@@ -129,6 +130,8 @@ bo_config = dict(
     budget=BUDGET)
 bo = BayesianOptimizer(
     **bo_config,
+    # FIXME: to optimize on log10 scale:
+    #  lambda x: pipe.evaluate_model_with_SGD(10**x)
     closure=pipe.evaluate_model_with_SGD)
 
 
