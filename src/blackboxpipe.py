@@ -154,8 +154,7 @@ class BlackBoxPipe:
         self.costs.append(avg_cost)
         print('Finished testing')
 
-        return cost  # Sum of cross entropy loss. Alternatively:
-        # return avg_cost
+        return avg_cost
 
     def flush(self, path):
         """
