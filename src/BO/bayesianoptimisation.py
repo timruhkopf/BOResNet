@@ -19,6 +19,13 @@ class BayesianOptimizer:
         for n in names:
             self.__setattr__(n, self.tracker.__getattribute__(n))
 
+    def plot_bo(self, n_test=500):
+        self.tracker.plot_bo(n_test)
+        # TODO add savefig write out. This way, BO can be called at the end
+        #  of optimisation to get a first glance of the process.
+        #  Fine tuning is still available on local machine by restoring
+        #  BoTracker object!
+
     def optimize(self, initial_guess, eps, gp_config, precision=200):
         """
 
@@ -33,7 +40,7 @@ class BayesianOptimizer:
         self.tracker.eps = eps
         self.tracker.precision = precision
 
-        # check if initial_guess is in search space
+        # Check if initial_guess is in search space.
         if initial_guess is None:
             initial_guess = torch.distributions.Uniform(
                 *self.search_space).sample([1])
@@ -43,27 +50,31 @@ class BayesianOptimizer:
 
         # Inquire costs of initial_guess.
         self.inquired[0] = initial_guess
-        self.costs[0] = self.closure(10 ** initial_guess)  # FIXME check me
+        self.incumbent[0] = initial_guess
+        self.inc_idx = 0
+        self.costs[0] = self.closure(initial_guess)
 
         for t in range(1, self.budget):
             # Fit the Gaussian Process to the observed data.
             self.gpr_t = GaussianProcess(
                 x=self.inquired[:t], y=self.costs[:t], **gp_config)
-
             self.gprs.append(self.gpr_t)
+            self.gpr_t.fit_hyperparam(400)
 
             # Find max EI.
             self.inquired[t] = ExpectedImprovement.max_ei(self, precision, eps)
 
             # Inquire costs of next candidate.
-            # FIXME check me 10th power
-            self.costs[t] = self.closure(10 ** self.inquired[t])
+            self.costs[t] = self.closure(self.inquired[t])
 
             # Replace the incumbent if necessary.
-            self.incumbent, self.inc_idx, _ = min(
-                [(self.incumbent, self.inc_idx, self.costs[self.inc_idx]),
+            incumbent, self.inc_idx, _ = min(
+                [(self.incumbent[t - 1], self.inc_idx,
+                  self.costs[self.inc_idx]),
                  (self.inquired[t], t, self.costs[t])],
                 key=lambda x: x[2])
+
+            self.incumbent[t] = incumbent
 
 
 if __name__ == '__main__':
