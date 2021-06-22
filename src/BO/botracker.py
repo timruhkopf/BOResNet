@@ -1,10 +1,9 @@
-import torch
-import matplotlib.pyplot as plt
 import pickle
 
-from src.BO.gaussianprocess import GaussianProcess
+import matplotlib.pyplot as plt
+import torch
+
 from src.BO.expectedimprovment import ExpectedImprovement
-import pyro.contrib.gp as gp
 
 
 class BoTracker:
@@ -50,7 +49,7 @@ class BoTracker:
         :param path: folder of the residing file /BoTracker.pkl
         # TODO make path the filepath
         :param noise: originally assumed noise of GP.
-        :return:
+        :return: Instance to BoTracker.
 
         :example:
         import os
@@ -63,23 +62,14 @@ class BoTracker:
 
         # Load from disk.
         filename = '{}/BoTracker.pkl'.format(path)
-        checkpoint = torch.load(path)
+        checkpoint = torch.load('{}/gpr_models'.format(path))
         with open(filename, 'rb') as f:
             obj = pickle.load(f)
 
         # Instantiate GP's and load their state.
         obj.gprs = []
         for t, k in enumerate(checkpoint):
-            some_kernel = gp.kernels.Matern32(
-                input_dim=1, variance=torch.tensor(1.),
-                lengthscale=torch.tensor(1.))
-
-            obj.gprs.append(GaussianProcess(
-                obj.inquired[:t + 1], obj.costs[:t + 1], some_kernel,
-                noise=torch.tensor(noise),
-                jitter=1e-5))
-
-            obj.gprs[t].gpr_t.load_state_dict(checkpoint[k])
+            obj.gprs.append(checkpoint[k])
 
         return obj
 
