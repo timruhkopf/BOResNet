@@ -135,7 +135,7 @@ bo = BayesianOptimizer(
 bo.optimize(eps=EPS, initial_guess=INIT_LAMB, gp_config=GPCONFIG)
 bo.plot_bo()
 
-# Write out the final image.
+# Write out the final image. (first look on remote workload)
 bo.tracker.fig.savefig('{}/bo_{}.pdf'.format(modeldir, git_hash),
                        bbox_inches='tight')
 
@@ -152,6 +152,7 @@ if TEST:
 
     from src.BO.botracker import BoTracker
 
+    modeldir = '/home/tim/PycharmProjects/BOResNet/models/server_return/run_7e40e19_20210622_163733'
     botracker = BoTracker.load(modeldir)
     botracker.plot_bo()
 

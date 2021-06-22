@@ -78,7 +78,7 @@ class BlackBoxPipe:
             timestamp = s.format(datetime.datetime.now())
             torch.save(self.model.state_dict(),
                        '{}/model_{}'.format(self.path, timestamp))
-
+            print('Saved model_{}'.format(timestamp))
         return cost
 
     def train(self, optimizer, loss_fn):
@@ -154,7 +154,8 @@ class BlackBoxPipe:
         self.costs.append(avg_cost)
         print('Finished testing')
 
-        return avg_cost
+        return cost  # Sum of cross entropy loss. Alternatively:
+        # return avg_cost
 
     def flush(self, path):
         """

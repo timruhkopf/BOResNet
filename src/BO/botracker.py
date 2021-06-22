@@ -25,7 +25,7 @@ class BoTracker:
 
         # Gaussian Process objects
         self.gprs = []
-        self.noise = noise
+        self.noise = noise  # TODO remove noise argument!
         self.inc_idx = 0
         self.incumbent = torch.zeros(self.budget)
 
@@ -48,6 +48,7 @@ class BoTracker:
 
         :param path: folder of the residing file /BoTracker.pkl
         # TODO make path the filepath
+        # TODO remove noise argument!
         :param noise: originally assumed noise of GP.
         :return: Instance to BoTracker.
 
