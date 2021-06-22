@@ -73,28 +73,31 @@ class BoTracker:
 
         return obj
 
-    def plot_bo(self, n_test):
+    def plot_bo(self, n_test=500):
         """
         :param n_test: int. Number of points at which the plot is evaluated.
         """
         # DO NOT share y! early bad uncertainty estimates may yield
         # non-interpretable visual.
         nrows = self.budget // 2 + self.budget % 2
-
-        self.fig, self.axes = plt.subplots(
-            nrows, 2, sharex=True)
-        self.axes = self.axes.flatten()
+        self.fig, self.axes = plt.subplots(nrows, 2, sharex=True)
+        self.axes = self.axes.flatten().tolist()
 
         # Remove excess plot (if there is one)
-        if self.budget % 2 > 0:
+        # Notice, that the first obs. is inquired without a gp, so gp is
+        # shorter by one.
+        FLAG_REMOVED = False
+        if (self.budget - 1) % 2 > 0:
             self.fig.delaxes(self.axes[-1])
+            self.axes.pop()
+            FLAG_REMOVED = True
 
         title = 'Bayesian Optimization for steps 2-{}'
         self.fig.suptitle(title.format(self.budget))
 
         X_test = torch.linspace(*self.search_space, n_test)
-        for t in range(1, self.budget + 1):
-            ax = self.axes[t]
+
+        for t, ax in enumerate(self.axes):
             ax.set_xlim(*self.search_space)
 
             # TODO for common labels: remove labels to share a single label
@@ -103,35 +106,63 @@ class BoTracker:
             # ax.set_ylabel('.', color=(0, 0, 0, 0))
 
             # (a) Plot the observed data points.
-            obs = ax.scatter(self.inquired[:t].numpy(),
-                          self.costs[:t].numpy(),
+            obs = ax.plot(self.inquired[:t + 1].numpy(),
+                          self.costs[:t + 1].numpy(),
                           'kx', label='Observed')
 
             # (b) Plot the current incumbent.
             # Annotate the plot with exact value.
-            inc = ax.scatter(self.incumbent[t].numpy(), self.costs[t].numpy(),
-                          '^', label='Incumbent')
+            inc = ax.plot(self.incumbent[t].numpy(),
+                          self.costs[self.inc_idx].numpy(),
+                          'o', label='Incumbent')
 
             # (c1) Plot the cost approximation & uncertainty.
+            self.gpr_t = self.gprs[t]
             with torch.no_grad():
-                mean, sd = self.gprs[t](X_test)
+                mean, _, sd = self.gpr_t.predict(X_test)
+
+            gp_mean = ax.plot(
+                X_test.numpy(), mean.numpy(), 'r',
+                label='GP mean', lw=2)
 
             # (c2) Plot lower-bound-constrained uncertainty:
-            lower = torch.minimum(torch.zeros_like(sd),
-                                  mean - 2 * sd).numpy()
+            # "confidence-bands"
+            lower = (mean - 2 * sd).numpy()
             upper = (mean + 2 * sd).numpy()
 
-            # (e) Plot next candidate
-            max_ei = ax.plot()
+            gp_sigma = ax.fill_between(
+                X_test.numpy(), lower, upper,
+                label='GP +/-2 * sd', color='C0', alpha=0.3)
+
+            # EI: plot on the right axis:
+            ax_ei_scale = ax.twinx()
 
             # (d) Plot expected improvement on other axis.
             ei = ExpectedImprovement.eval(self, X_test, self.eps)
-            self.plot(X_test.numpy(), ei.numpy(), label='EI')
+            ax_ei_scale.plot(X_test.numpy(), ei.numpy(), label='EI')
+
+            # (e) Plot next candidate
+            max_val = ExpectedImprovement.max_ei(self)
+            max_ei = ax_ei_scale.plot(
+                max_val.numpy(),
+                ExpectedImprovement.eval(self, max_val).numpy(),
+                'v', label='EI max')
 
         # TODO add common labels for x & y (once only)
-        # self.fig.add_subplot(111, frame_on=False)
-        # plt.tick_params(labelcolor="none", bottom=False, left=False)
-        # plt.xlabel("Common X-Axis")
-        # plt.ylabel("Common Y-Axis")
+        # ax = self.fig.add_subplot(111, frame_on=False)
+        #
+        # ax.tick_params(labelcolor="none", bottom=False, left=False,
+        # top=False, right=False)
+        # ax.set_xlabel("X-axis")
+        #
+        # ax.set_ylabel("Common Y-Axis")
+        # ei_axis = ax.twinx()
+        # ei_axis.set_ylabel('Common Y2-Axis')
+        # ei_axis.get_xaxis().set_visible(False)
 
-        plt.show()
+        # FIXME: Add x-ticks to the lower right
+        # if FLAG_REMOVED:
+        #     self.axes[-2].set_xticks(
+        #         torch.linspace(*self.search_space,
+        #                        abs(int(self.search_space[0]
+        #                        - self.search_space[1]))))
