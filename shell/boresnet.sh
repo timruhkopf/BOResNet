@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p gpu
-#SBATCH -t 04:00:00
+#SBATCH -t 05:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=BoResnet
 #SBATCH --output=BoResnet.%j.out
@@ -13,7 +13,7 @@ module purge
 #module --ignore-cache load cuda90/nsight
 #module --ignore-cache load cuda90/profiler
 
-# GWDG tutorial on tensorflow
+# GWDG tutorial on tensorflocw
 # module load cuda90/toolkit/9.0.176
 # module load cuda90/blas/9.0.176
 # module load cudnn/90v7.3.1
