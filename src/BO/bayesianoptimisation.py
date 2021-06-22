@@ -1,5 +1,4 @@
 import torch
-import matplotlib.pyplot as plt
 
 from src.BO.botracker import BoTracker
 from src.BO.expectedimprovment import ExpectedImprovement
@@ -20,19 +19,15 @@ class BayesianOptimizer:
         for n in names:
             self.__setattr__(n, self.tracker.__getattribute__(n))
 
-    def get_candidate(self, eps, precision):
-        # Fit gpr under constraints
+    def optimize(self, initial_guess, eps, precision, gp_config):
+        """
 
-        GaussianProcess(X, y, initial_var, initial_length, noise)
-        self.gprs.append()
-
-        # Find max EI
-        self.gpr_t = self.gprs[-1]  # make avail to EI
-        candidate = ExpectedImprovement.max_ei(self, eps, precision)
-
-        pass
-
-    def optimize(self, initial_guess, eps, precision):
+        :param initial_guess: initial guess on the
+        :param eps:
+        :param precision:
+        :param gp_config:
+        :return:
+        """
 
         # Update tracker with user input:
         self.tracker.eps = eps
@@ -48,14 +43,21 @@ class BayesianOptimizer:
 
         # Inquire costs of initial_guess.
         self.inquired[0] = initial_guess
-        self.costs[0] = self.closure(initial_guess)
+        self.costs[0] = self.closure(10 ** initial_guess)  # FIXME check me
 
         for t in range(1, self.budget):
-            # Max. expected improvement based on gpr's cost estimates
-            self.tracker.inquired[t] = self.get_candidate(eps, precision)
+            # Fit the Gaussian Process to the observed data.
+            self.gpr_t = GaussianProcess(
+                x=self.inquired[:t - 1], y=self.costs[:t - 1], **gp_config)
+
+            self.gprs.append(self.gpr_t)
+
+            # Find max EI.
+            self.inquired[t] = ExpectedImprovement.max_ei(self, eps, precision)
 
             # Inquire costs of next candidate.
-            self.costs[t] = self.closure(self.tracker.inquired[t])
+            # FIXME check me 10th power
+            self.costs[t] = self.closure(10 ** self.inquired[t])
 
             # Replace the incumbent if necessary.
             self.incumbent, self.inc_idx, _ = min(
