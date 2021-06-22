@@ -20,10 +20,10 @@ class ExpectedImprovement:
         """
         with torch.no_grad():
             # Inquire the MAP estimate for mu^t(lamb), sd^t(lamb) from GP
-            mu_t, sd_t = self.gpr_t.predict(lamb)
+            mu_t, _, sd_t = self.gpr_t.predict(lamb)
 
         # Calculate EI.
-        Z = (self.cost[self.inc_idx] - mu_t - eps) / sd_t
+        Z = (self.costs[self.inc_idx] - mu_t - eps) / sd_t
         u = (sd_t
              * (Z * td.Normal(0., 1.).cdf(Z)
                 + torch.exp(td.Normal(0., 1.).log_prob(Z))
@@ -50,7 +50,7 @@ class ExpectedImprovement:
         """
         # Evaluate EI on the entire searchspace.
         lamb = torch.linspace(*self.search_space, steps=precision)
-        u = self.expected_improvement(lamb, eps=eps)
+        u = ExpectedImprovement.eval(self, lamb, eps=eps)
 
         # Find and return lamb = argmax_{lamb} u(lamb)
         argmax = u.max(0)[1]

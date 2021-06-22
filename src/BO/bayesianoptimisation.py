@@ -19,7 +19,7 @@ class BayesianOptimizer:
         for n in names:
             self.__setattr__(n, self.tracker.__getattribute__(n))
 
-    def optimize(self, initial_guess, eps, precision, gp_config):
+    def optimize(self, initial_guess, eps, gp_config, precision=200):
         """
 
         :param initial_guess: initial guess on the
@@ -48,12 +48,12 @@ class BayesianOptimizer:
         for t in range(1, self.budget):
             # Fit the Gaussian Process to the observed data.
             self.gpr_t = GaussianProcess(
-                x=self.inquired[:t - 1], y=self.costs[:t - 1], **gp_config)
+                x=self.inquired[:t], y=self.costs[:t], **gp_config)
 
             self.gprs.append(self.gpr_t)
 
             # Find max EI.
-            self.inquired[t] = ExpectedImprovement.max_ei(self, eps, precision)
+            self.inquired[t] = ExpectedImprovement.max_ei(self, precision, eps)
 
             # Inquire costs of next candidate.
             # FIXME check me 10th power
@@ -109,6 +109,9 @@ if __name__ == '__main__':
 
     # Dump remote tracker:
     bo.tracker.save(path)
+
+    # Remove everything
+    del pipe, bo
 
     # Obtain tracker
     new_tracker = BoTracker.load(path, gpr_config)
