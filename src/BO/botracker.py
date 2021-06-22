@@ -112,9 +112,9 @@ class BoTracker:
 
             # (b) Plot the current incumbent.
             # Annotate the plot with exact value.
-            inc = ax.plot(self.incumbent[t].numpy(),
-                          self.costs[self.inc_idx].numpy(),
-                          'o', label='Incumbent')
+            incumb = self.incumbent[t].numpy()
+            incumb_cost = self.costs[self.inc_idx].numpy()
+            inc = ax.plot(incumb, incumb_cost, 'o', label='Incumbent')
 
             # (c1) Plot the cost approximation & uncertainty.
             self.gpr_t = self.gprs[t]
@@ -143,26 +143,33 @@ class BoTracker:
 
             # (e) Plot next candidate
             max_val = ExpectedImprovement.max_ei(self)
-            max_ei = ax_ei_scale.plot(
-                max_val.numpy(),
-                ExpectedImprovement.eval(self, max_val).numpy(),
-                'v', label='EI max')
+            ei_val = ExpectedImprovement.eval(self, max_val).numpy()
+            max_ei = ax_ei_scale.plot(max_val.numpy(), ei_val, 'v',
+                                      label='Max EI')
 
-        # TODO add common labels for x & y (once only)
-        # ax = self.fig.add_subplot(111, frame_on=False)
-        #
-        # ax.tick_params(labelcolor="none", bottom=False, left=False,
-        # top=False, right=False)
-        # ax.set_xlabel("X-axis")
-        #
-        # ax.set_ylabel("Common Y-Axis")
-        # ei_axis = ax.twinx()
-        # ei_axis.set_ylabel('Common Y2-Axis')
-        # ei_axis.get_xaxis().set_visible(False)
+            handles, labels = ax.get_legend_handles_labels()
+            eihandles, eilabels = ax_ei_scale.get_legend_handles_labels()
 
-        # FIXME: Add x-ticks to the lower right
-        # if FLAG_REMOVED:
-        #     self.axes[-2].set_xticks(
-        #         torch.linspace(*self.search_space,
-        #                        abs(int(self.search_space[0]
-        #                        - self.search_space[1]))))
+            handles.extend(eihandles)
+            labels.extend(eilabels)
+            self.fig.legend(handles, labels, loc='lower right')
+
+            # TODO add common labels for x & y (once only)
+            # ax = self.fig.add_subplot(111, frame_on=False)
+            #
+            # ax.tick_params(labelcolor="none", bottom=False, left=False,
+            # top=False, right=False)
+            # ax.set_xlabel("X-axis")
+            #
+            # ax.set_ylabel("Common Y-Axis")
+            # ei_axis = ax.twinx()
+            # ei_axis.set_ylabel('Common Y2-Axis')
+            # ax.axis('off')
+            # ei_axis..set_visible(False)
+
+            # FIXME: Add x-ticks to the lower right
+            # if FLAG_REMOVED:
+            #     self.axes[-2].set_xticks(
+            #         torch.linspace(*self.search_space,
+            #                        abs(int(self.search_space[0]
+            #                        - self.search_space[1]))))
