@@ -58,12 +58,37 @@ class ExpectedImprovement:
 
 
 class ExpextedImprov_grad(ExpectedImprovement):
-    def max_ei_multigrad(self):
+    def max_ei(self, iteration, eps=0, budget=2000):
         """
         Intent: create multiple initializations (e.g. 10 evenly spaced or
         randomly placed on search space & use e.g. ADAM with some no.steps to
         reach the opt.
         """
+        # Find initial values.
+        initials = torch.zeros(iteration + 2)
+        initials[0], initials[-1] = self.search_space
+        initials[1:-1] = self.inquired[:iteration]
+        e = 0.001  # to stay in bounds at init.
+        initials = (initials[:-1] + initials.diff() - e)  # .detach()
 
-        # TODO check if still in search space!
-        raise NotImplementedError()
+        # Find the peaks of EI.
+        initials.requires_grad = True
+        optimizer = torch.optim.Adam(params=[initials], lr=0.01)
+        for s in range(budget):
+            optimizer.zero_grad()
+
+            u = -ExpectedImprovement.eval(self, initials, eps=eps)
+            u.backward(gradient=torch.ones_like(initials))
+
+            # Consider, that this actually requires 2nd order derivative due to
+            # mu(lamb) & sd(lamb)
+            # FIXME: This part seems not to pass the gradients through
+            # mu, _, sd = self.gpr_t.predict(initials)
+            # mu.backward(gradient=torch.ones_like(initials))
+            optimizer.step()
+
+        # TODO Check if still in search space; else replace with bound.
+
+        # Find and return lamb = argmax_{lamb} u(lamb)
+        argmax = initials.max(0)[1]
+        return initials[argmax].reshape((1,))

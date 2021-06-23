@@ -26,7 +26,7 @@ class BayesianOptimizer:
         #  Fine tuning is still available on local machine by restoring
         #  BoTracker object!
 
-    def optimize(self, initial_guess, eps, gp_config, precision=200):
+    def optimize(self, initial_guess, eps, gp_config, precision=400):
         """
 
         :param initial_guess: initial guess on the
@@ -55,19 +55,26 @@ class BayesianOptimizer:
         self.costs[0] = self.closure(initial_guess)
 
         for t in range(1, self.budget):
-            # Fit the Gaussian Process to the observed data.
+            # (0) Fit the Gaussian Process to the observed data.
             self.gpr_t = GaussianProcess(
                 x=self.inquired[:t], y=self.costs[:t], **gp_config)
             self.gprs.append(self.gpr_t)
             self.gpr_t.fit_hyperparam(400)
 
-            # Find max EI.
+            # (1) Find max EI.
+
+            # Naive method using linspace and ei evals.
             self.inquired[t] = ExpectedImprovement.max_ei(self, precision, eps)
 
-            # Inquire costs of next candidate.
+            # Fixme: Gradient based ei does not work due to GP failing to pass
+            #  the gradient through
+            # self.inquired[t] = ExpextedImprov_grad.max_ei(
+            #     self, iteration=t, eps=eps)
+
+            # (2) Inquire costs of next candidate.
             self.costs[t] = self.closure(self.inquired[t])
 
-            # Replace the incumbent if necessary.
+            # (3) Replace the incumbent if necessary.
             incumbent, self.inc_idx, _ = min(
                 [(self.incumbent[t - 1], self.inc_idx,
                   self.costs[self.inc_idx]),
@@ -105,8 +112,6 @@ if __name__ == '__main__':
             cost = None
             return cost
 
-
-    import pickle
 
     # On REMOTE -------------------------------------------------------
     pipe = BlackBoxPipe()
