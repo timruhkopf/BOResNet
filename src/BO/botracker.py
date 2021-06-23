@@ -78,6 +78,8 @@ class BoTracker:
         """
         :param n_test: int. Number of points at which the plot is evaluated.
         """
+
+        plt.rcParams["figure.figsize"] = (20, 20)
         # DO NOT share y! early bad uncertainty estimates may yield
         # non-interpretable visual.
         nrows = self.budget // 2 + self.budget % 2
@@ -143,7 +145,8 @@ class BoTracker:
             ax_ei_scale.plot(X_test.numpy(), ei.numpy(), label='EI')
 
             # (e) Plot next candidate
-            max_val = ExpectedImprovement.max_ei(self)
+            # max_val = ExpectedImprovement.max_ei(self) # actual recompute
+            max_val = self.inquired[t + 1].reshape([1])  # read from runhistory
             ei_val = ExpectedImprovement.eval(self, max_val).numpy()
             max_ei = ax_ei_scale.plot(max_val.numpy(), ei_val, 'v',
                                       label='Max EI')

@@ -149,8 +149,13 @@ if TEST:
     import numpy as np
     import matplotlib.pyplot as plt
     import seaborn as sns
+    import matplotlib
 
     from src.BO.botracker import BoTracker
+
+    matplotlib.use('TkAgg')
+
+    plt.rcParams["figure.figsize"] = (20, 20)
     modeldir = '/home/tim/PycharmProjects/BOResNet/models/server_return/run_7e40e19_20210622_163733'
     botracker = BoTracker.load(modeldir)
     botracker.plot_bo()
