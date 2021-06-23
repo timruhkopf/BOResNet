@@ -125,8 +125,7 @@ pipe = BlackBoxPipe(
 # (5) Pass closure object to BO, which is the bridge from the model to bo.
 bo_config = dict(
     search_space=SEARCH_SPACE,
-    budget=BUDGET,
-    noise=NOISE)
+    budget=BUDGET)
 bo = BayesianOptimizer(
     **bo_config,
     # To optimize on log10 scale: lambda function
@@ -155,8 +154,7 @@ if TEST:
 
     matplotlib.use('TkAgg')
 
-    plt.rcParams["figure.figsize"] = (20, 20)
-    modeldir = '/home/tim/PycharmProjects/BOResNet/models/server_return/run_7e40e19_20210622_163733'
+    # modeldir = '/home/tim/PycharmProjects/BOResNet/models/server_return/run_7e40e19_20210622_163733'
     botracker = BoTracker.load(modeldir)
     botracker.plot_bo()
 

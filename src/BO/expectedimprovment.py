@@ -7,9 +7,9 @@ import torch.distributions as td
 class ExpectedImprovement:
     def eval(self, lamb, eps=0.):
         """
-        Calculate the Expected Improvement.
+        Calculate the Expected Improvement at a hyperparameter location.
 
-        function definition based on the lecture slides
+        Function definition based on the lecture slides
         https://learn.ki-campus.org/courses/automl-luh2021/items/7rd8zSXREMWYBfbVTXLcci
 
         :param lamb: torch.Tensor. The values at which the EI is supposed to be
@@ -33,7 +33,7 @@ class ExpectedImprovement:
 
         return u
 
-    def max_ei(self, precision=200, eps=0.):
+    def max_ei(self, precision=1000, eps=0.):
         """
         Find the maximum of the previously calculated expected improvement.
 
@@ -42,11 +42,11 @@ class ExpectedImprovement:
         and evaluates self.expected_improvement for each of these grid points.
         lastly, it returns lamb* = argmax_{lamb} u(lamb).
 
-        :param precision: number of evenly spaced EI evaluations on the
+        :param precision: int. Number of evenly spaced EI evaluations on the
         search space.
         :param eps: float. This parameter allows the user to tip the balance of
         EI towards exploration or exploitation.
-        :returns the maximum value of the current EI function
+        :returns torch.tensor. The maximum value of the current EI function.
         """
         # Evaluate EI on the entire searchspace.
         lamb = torch.linspace(*self.search_space, steps=precision)
@@ -63,7 +63,17 @@ class ExpextedImprov_grad(ExpectedImprovement):
         Intent: create multiple initializations (e.g. 10 evenly spaced or
         randomly placed on search space & use e.g. ADAM with some no.steps to
         reach the opt.
+
+
+        :param iteration: int. Current iteration; used to create the number
+        of initial values from which ADAM optimizes (total number of initial
+        points = iteration + 2)
+        :param eps: parameter of ExpectedImprovrment.eval
+        :param budget: int. Number of optimizer steps.
+        :return: torch.tensor. maximum value to the expected improvement.
         """
+        raise NotImplementedError()
+
         # Find initial values.
         initials = torch.zeros(iteration + 2)
         initials[0], initials[-1] = self.search_space

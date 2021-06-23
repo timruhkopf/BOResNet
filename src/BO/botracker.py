@@ -7,15 +7,21 @@ from src.BO.expectedimprovment import ExpectedImprovement
 
 
 class BoTracker:
-    """
-    Purpose of this object is to be easily storable. This way, all the
-    information of a Bo run can be saved to disk, restored and the plot is
-    computed locally rather than remotely. Alterations to the plot are far
-    more easily done. Simply overwrite this models plot method before
-    restoring an instance from disk.
-    """
+    def __init__(self, search_space, budget):
+        """
+        Tracker.
 
-    def __init__(self, search_space, budget, noise):
+        BoTracker is a tracking device, upon which BayesianOptimizer writes
+        all its data. Purpose of this object is to be easily storable &
+        recoverable. This way, all the information of a Bo run can be saved to
+        disk, restored and the plot is computed locally rather than remotely.
+        Alterations to the plot are far more easily done. Simply overwrite
+        this models plot method before restoring an instance from disk.
+
+        :param search_space: tuple of floats, giving the interval bounds of
+        the one dimensional continuous search space.
+        :param budget: int. number of function evaluations.
+        """
         self.search_space = search_space
         self.budget = budget
 
@@ -25,7 +31,6 @@ class BoTracker:
 
         # Gaussian Process objects
         self.gprs = []
-        self.noise = noise  # TODO remove noise argument!
         self.inc_idx = 0
         self.incumbent = torch.zeros(self.budget)
 
@@ -33,24 +38,28 @@ class BoTracker:
         self.ei = []
 
     def save(self, path):
-        # write out gpr models
+        """
+        Save the BoTracker to disk
+        :param path: str. Path to a folder on disk
+        """
+        # Write out gpr models.
         gprs = {'gpr_{}'.format(t): gpr for t, gpr in enumerate(self.gprs)}
         torch.save(gprs, '{}/gpr_models'.format(path))
 
+        # Write out BoTracker data.
         filename = '{}/BoTracker.pkl'.format(path)
         with open(filename, 'wb') as handle:
             pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
-    def load(cls, path, noise=0.):
+    def load(cls, path):
         """
         Load a BoTracker instance from disk.
 
-        :param path: folder of the residing file /BoTracker.pkl
-        # TODO make path the filepath
-        # TODO remove noise argument!
-        :param noise: originally assumed noise of GP.
-        :return: Instance to BoTracker.
+        :param path: str. Folder of the residing file /BoTracker.pkl &
+        gpr_models files
+        :return: Instance to BoTracker.  With all the data recovered from the
+        BoTracker.pkl & gpr_models files
 
         :example:
         import os
@@ -76,10 +85,21 @@ class BoTracker:
 
     def plot_bo(self, n_test=500):
         """
+        1d plotting method of a Bayesian optimisation run
+
+        Plotting multiple iterations including
+        (1) the observed hyperparameters and their costs,
+        (2) the GPs surrogate estimate of the cost function including mean and
+        two times the standard deviation as crude uncertainty estimate,
+        (3) expected improvement of the current iteration,
+        (4) maximal expected improvement and
+        (5) the current incumbent (i.e. best hyperparameter so far).
+
         :param n_test: int. Number of points at which the plot is evaluated.
         """
 
         plt.rcParams["figure.figsize"] = (20, 20)
+
         # DO NOT share y! early bad uncertainty estimates may yield
         # non-interpretable visual.
         nrows = self.budget // 2 + self.budget % 2
@@ -144,7 +164,7 @@ class BoTracker:
             ei = ExpectedImprovement.eval(self, X_test, self.eps)
             ax_ei_scale.plot(X_test.numpy(), ei.numpy(), label='EI')
 
-            # (e) Plot next candidate
+            # (e) Plot next candidate.
             # max_val = ExpectedImprovement.max_ei(self) # actual recompute
             max_val = self.inquired[t + 1].reshape([1])  # read from runhistory
             ei_val = ExpectedImprovement.eval(self, max_val).numpy()
@@ -158,15 +178,31 @@ class BoTracker:
         labels.extend(eilabels)
         self.fig.legend(handles, labels, loc='lower right')
 
-        # Set common labels
+        # Set common labels.
         self.fig.text(0.5, 0.04, 'Learning rate (10^lr)', ha='center')
         self.fig.text(0.07, 0.5, 'Avg. CrossEntropyLoss', va='center',
                       rotation='vertical')
         self.fig.text(0.95, 0.5, 'Expected Improvement', va='center',
                       rotation='vertical')
 
-        # self.fig.canvas.draw()
-        # labels = [ '10^'+item.get_text() for item in ax.get_xticklabels()]
+        # Set tick labels visible of foremost plot. --------------------------
+        # self.axes[-2].get_xaxis().get_majorticklabels().set_visible(True)
+        # self.axes[-2].set_xticklabels([str(i) for i in range(-5, 0, 1)])
+
+        # import matplotlib.ticker as mticker
         #
-        # self.axes[-1].set_xticklabels(labels)
-        # self.axes[-2].set_xticklabels(labels)
+        # label_format = '{:,.0f}'
+        # ticks_loc = self.axes[-2].get_xticks().tolist()
+        # self.axes[-2].xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
+        # self.axes[-2].set_xticklabels([label_format.format(x) for x in
+        #                              ticks_loc])
+
+        # self.axes[-2].get_xticklabels().set_visible(True)
+        # self.fig.canvas.draw()
+        # labels = [ item.get_text() for item in self.axes[-1].get_xticklabels()]
+        #
+        # self.axes[-2].xaxis = self.axes[-1].xaxis #  set_xtickslabels(
+        # # self.axes[
+        # # -1].axes)
+        #
+        plt.show()

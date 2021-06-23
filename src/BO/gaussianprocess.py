@@ -6,12 +6,21 @@ import torch
 class GaussianProcess:
     def __init__(self, x, y, initial_var, initial_length, noise):
         """
+        Gaussian Process
 
-        :param x: tensor.
-        :param y: tensor.
-        :param initial_var: float
-        :param initial_length: float
-        :param noise: float
+        Surrogate object to pyro's gp.models.GPRegression.
+        Allows to specify and inquiry a parameterized GP with Matern32 kernel.
+        Notice, that the kernels hyperparameters can be optimized.
+
+
+        :param x: torch.tensor 1d. Already inquired hyperparameter.
+        :param y: torch.tensor. 1d. Cost to x
+        :param initial_var: float. Intital variance hyperparameter to the
+        kernel.
+        :param initial_length: float. Intital lengthscale hyperparameter to
+        the kernel.
+        :param noise: float. Specifies the Initally assumed noise level to
+        the GP regression; i.e. f(x) + e = y
         """
         kernel = gp.kernels.Matern32(
             input_dim=1, variance=torch.tensor(initial_var),
@@ -29,6 +38,12 @@ class GaussianProcess:
         self.loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
 
     def fit_hyperparam(self, num_steps):
+        """
+        Optimize the kernels hyperparameters using ADAM.
+
+        :param num_steps: int. Number of iterations taken by ADAM.
+        :return: None. Inplace change to the kernel's hyperparameters.
+        """
         pyro.clear_param_store()
 
         losses = []
@@ -46,6 +61,13 @@ class GaussianProcess:
             self.gpr_t.noise.item()))
 
     def predict(self, X):
+        """
+        Predict the GP function for new values.
+
+        :param X: torch.tensor. 1d
+        :return: tuple. mean, covariance and standard diviation prediction of
+        the GP at the X location.
+        """
         with torch.no_grad():
             mean, cov = self.gpr_t(X, full_cov=True, noiseless=False)
             var = cov.diag()

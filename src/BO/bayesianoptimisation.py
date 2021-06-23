@@ -6,12 +6,26 @@ from src.BO.gaussianprocess import GaussianProcess
 
 
 class BayesianOptimizer:
-    def __init__(self, search_space, budget, closure, noise):
+    def __init__(self, search_space, budget, closure):
+        """
+        Bayesian Optimization working on a 1d search space.
+
+        Using a Gaussian Process, the cost function is evaluated,
+        Subsequently, based on this approximation expected improvement is
+        calculated and its max value (=new hyperparameter) is queried from the
+        black box model.
+
+        :param search_space: tuple of floats, giving the interval bounds of
+        the one dimensional continuous search space.
+        :param budget: int. number of function evaluations.
+        :param closure: parametrized & callable function that is to be
+        optimized
+        """
         self.search_space = search_space
         self.budget = budget
         self.closure = closure
 
-        self.tracker = BoTracker(search_space, budget, noise)
+        self.tracker = BoTracker(search_space, budget)
 
         # Make BoTracker's arguments available in this instance.
         # Be aware of the shared object structure (and "right of ownership")
@@ -20,20 +34,47 @@ class BayesianOptimizer:
             self.__setattr__(n, self.tracker.__getattribute__(n))
 
     def plot_bo(self, n_test=500):
+        """
+        Is a direct call to self.tracker.plot_bo. See its documentation
+        for details
+        """
         self.tracker.plot_bo(n_test)
-        # TODO add savefig write out. This way, BO can be called at the end
-        #  of optimisation to get a first glance of the process.
-        #  Fine tuning is still available on local machine by restoring
-        #  BoTracker object!
 
     def optimize(self, initial_guess, eps, gp_config, precision=400):
         """
+        Execute bayesian optimization on the provided closure.
 
-        :param initial_guess: initial guess on the
-        :param eps:
-        :param precision:
-        :param gp_config:
-        :return:
+        # THE ALGORITHM TO DO THIS:
+        Require: Search space Λ , cost function c, acquisition function u, pre-
+            dictive model ĉ, maximal number of function evaluations T
+        Result : Best configuration λ̂ (according to D or ĉ)
+
+        (1) Initialize data D (0) with initial observations. (done at init
+        of BO)
+        for t = 1 to T do
+            Fit predictive model ĉ^(t) on D^(t−1)
+            Select next query point:
+                λ^(t) ∈ arg max_{λ ∈Λ} u( λ | D^(t−1) , ĉ^(t))
+
+            Query c(λ^(t))
+            Update data: D^(t) ← D^(t−1) ∪ {<λ^(t) , c(λ^(t))>}
+
+        return arg_min_λ c(λ^(t)) from {λ_t}_t=1 ^T
+        the return value is called the INCUMBENT
+
+        :param initial_guess: torch.Tensor. Optional initial guess. Default
+        is sampling a value uniformly from the search space.
+        :param eps: float. This parameter allows the user to tip the balance of
+        EI towards exploration or exploitation.
+        :param precision: int. Number of values placed on the search space
+        and evaluated in the expected improvement to determine the max ei.
+        :param gp_config: dict. Configurational details of GP. See
+        GaussianProcess documentation for details
+
+        :return: torch.tensor. Incumbent hyperparameter.
+        Writes all is data including the GaussianProcess
+        objects directly to a BoTracker instance. This allows to store and
+        recover all the results of an optimisation run.
         """
 
         # Update tracker with user input:
@@ -82,3 +123,5 @@ class BayesianOptimizer:
                 key=lambda x: x[2])
 
             self.incumbent[t] = incumbent
+
+        return self.incumbent[t]
