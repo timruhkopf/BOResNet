@@ -28,7 +28,7 @@ class BayesianOptimizer:
         self.tracker = BoTracker(search_space, budget)
 
         # Make BoTracker's arguments available in this instance.
-        # Be aware of the shared object structure (and "right of ownership")
+        # Be aware of the shared object structure (and "right of ownership").
         names = ['costs', 'inquired', 'gprs', 'incumbent', 'inc_idx', 'ei',
                  'max_ei']
         for n in names:
@@ -37,7 +37,7 @@ class BayesianOptimizer:
     def plot_bo(self, n_test=500):
         """
         Is a direct call to self.tracker.plot_bo. See its documentation
-        for details
+        for details.
         """
         self.tracker.plot_bo(n_test)
 

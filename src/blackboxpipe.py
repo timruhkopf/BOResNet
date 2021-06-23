@@ -12,7 +12,7 @@ class BlackBoxPipe:
     def __init__(self, model, trainloader, testloader, epochs,
                  device, path=None):
         """
-        BlackBoxpipe is a naive tracer class to gather all the information
+        BlackBoxPipe is a naive tracer class to gather all the information
         across individual calls to the evaluate_model_with_SGD function.
 
         :param model: Instance to a nn.Module subclass.
@@ -28,7 +28,7 @@ class BlackBoxPipe:
         self.testloader = testloader
         self.epochs = epochs
 
-        # Tracked information preallocation
+        # Tracked information pre-allocation
         self.trainlosses = []
         self.lrs = []
         self.costs = []
@@ -43,10 +43,12 @@ class BlackBoxPipe:
 
     def evaluate_model_with_SGD(self, lr):
         """
-        'Black-Box' model to be trained using SGD & the specified learning
-        rate using n epochs on the training data. Subsequently, the final
-        model is evaluated on the entire testloader once.
-        Uses nn.CrossEntropyLoss in the process.
+        'Black-Box' model.
+
+        This method specifies the training & testing procedure on self.model
+        using SGD & the specified learning rate using n epochs on the
+        training data. Subsequently, the final model is evaluated on the entire
+        testloader once. Uses nn.CrossEntropyLoss in the process.
 
         :param lr: float. learning rate of SGD.
         :return: torch.Tensor. loss of the model trained with lr evaluated
@@ -158,9 +160,13 @@ class BlackBoxPipe:
 
     def flush(self, path):
         """
+        Write out all tracked information to disk.
+        Information included are the trainlosses (every 1000th step),
+        the learningrates, the associated costs (final average
+        CrossEntropyLoss on the entire testdataset, the achieved accuracies and
+        the associated confusion matrices.
 
-        :param path:
-        :return:
+        :param path: str. Specifies the folder in which the output is written.
         """
         pickledict = dict(
             trainlosses=self.trainlosses, lrs=self.lrs, costs=self.costs,

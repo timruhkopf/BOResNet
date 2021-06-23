@@ -15,11 +15,11 @@ class GaussianProcess:
 
         :param x: torch.tensor 1d. Already inquired hyperparameter.
         :param y: torch.tensor. 1d. Cost to x
-        :param initial_var: float. Intital variance hyperparameter to the
+        :param initial_var: float. Initial variance hyperparameter to the
         kernel.
-        :param initial_length: float. Intital lengthscale hyperparameter to
+        :param initial_length: float. Initial lengthscale hyperparameter to
         the kernel.
-        :param noise: float. Specifies the Initally assumed noise level to
+        :param noise: float. Specifies the Initially assumed noise level to
         the GP regression; i.e. f(x) + e = y
         """
         kernel = gp.kernels.Matern32(
@@ -83,7 +83,7 @@ class GaussianProcess:
 class GP_constrained:
     def __init__(self):
         """
-        Consider unsing this GP implementation:
+        Consider using this GP implementation:
         https://github.com/cagrell/gp_constr/blob/master/Example_1a.ipynb.
         This would allow to constrain the GP to predict e.g. only positive
         values for both mean & variance - which is handy if the cost

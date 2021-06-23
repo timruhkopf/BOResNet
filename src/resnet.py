@@ -82,7 +82,10 @@ class ResNet(nn.Module):
         return self.layers(x)
 
     def reset_parameters(self):
-        """Resampling all parameters of the model."""
+        """
+        Resampling (inplace) all parameters of the model using their
+        predefined sampling procedures.
+        """
         for layer in self.layers:
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()

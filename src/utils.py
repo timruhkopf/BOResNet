@@ -1,9 +1,11 @@
-import torch
-import numpy as np
-import matplotlib.pyplot as plt
 import subprocess
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
+
+# TODO: add japanese (non-ascii) language support to matplotlib to display
 # import pandas as pd
 # import matplotlib
 # from matplotlib import font_manager

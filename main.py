@@ -18,7 +18,7 @@ torch.manual_seed(0)
 git_hash = get_git_revision_short_hash()
 
 # (0) Setup your computation device / plotting method. ------------------------
-TEST = False
+TEST = True
 ROOT_DATA = 'Data/Raw/'
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -30,7 +30,7 @@ SEARCH_SPACE = (-5, -1)
 GPCONFIG = dict(initial_var=0.5, initial_length=0.5, noise=0.)
 
 if TEST:
-    BUDGET = 4
+    BUDGET = 10
     EPOCHS = 1
     BATCH_SIZE = 1
 

@@ -98,7 +98,7 @@ class BoTracker:
 
         :param n_test: int. Number of points at which the plot is evaluated.
         """
-
+        # Set figure size to avoid overplotting of twinx.
         plt.rcParams["figure.figsize"] = (20, 20)
 
         # DO NOT share y! early bad uncertainty estimates may yield

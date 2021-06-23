@@ -1,6 +1,7 @@
+import itertools
+
 import torch
 import torch.nn as nn
-import itertools
 
 
 class ResidualBlock(nn.Module):
@@ -106,7 +107,10 @@ class ResidualBlock(nn.Module):
         return self.layers[-1](x + self.layers[-2](xskip))
 
     def reset_parameters(self):
-        """Resampling all parameters of the model."""
+        """
+        Resampling (inplace) all parameters of the model using their
+        predefined sampling procedures.
+        """
         for layer in self.layers:
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()
