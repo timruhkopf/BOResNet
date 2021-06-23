@@ -157,23 +157,3 @@ class BoTracker:
             handles.extend(eihandles)
             labels.extend(eilabels)
             self.fig.legend(handles, labels, loc='lower right')
-
-            # TODO add common labels for x & y (once only)
-            # ax = self.fig.add_subplot(111, frame_on=False)
-            #
-            # ax.tick_params(labelcolor="none", bottom=False, left=False,
-            # top=False, right=False)
-            # ax.set_xlabel("X-axis")
-            #
-            # ax.set_ylabel("Common Y-Axis")
-            # ei_axis = ax.twinx()
-            # ei_axis.set_ylabel('Common Y2-Axis')
-            # ax.axis('off')
-            # ei_axis..set_visible(False)
-
-            # FIXME: Add x-ticks to the lower right
-            # if FLAG_REMOVED:
-            #     self.axes[-2].set_xticks(
-            #         torch.linspace(*self.search_space,
-            #                        abs(int(self.search_space[0]
-            #                        - self.search_space[1]))))

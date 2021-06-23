@@ -53,8 +53,8 @@ class ExpectedImprovement:
         u = ExpectedImprovement.eval(self, lamb, eps=eps)
 
         # Find and return lamb = argmax_{lamb} u(lamb)
-        argmax = u.max(0)[1]
-        return lamb[argmax].reshape((1,))
+        indmax = u.max(0)[1]
+        return lamb[indmax].reshape((1,))
 
 
 class ExpextedImprov_grad(ExpectedImprovement):
