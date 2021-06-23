@@ -29,7 +29,8 @@ class BayesianOptimizer:
 
         # Make BoTracker's arguments available in this instance.
         # Be aware of the shared object structure (and "right of ownership")
-        names = ['costs', 'inquired', 'gprs', 'incumbent', 'inc_idx', 'ei']
+        names = ['costs', 'inquired', 'gprs', 'incumbent', 'inc_idx', 'ei',
+                 'max_ei']
         for n in names:
             self.__setattr__(n, self.tracker.__getattribute__(n))
 
@@ -40,7 +41,7 @@ class BayesianOptimizer:
         """
         self.tracker.plot_bo(n_test)
 
-    def optimize(self, initial_guess, eps, gp_config, precision=400):
+    def optimize(self, initial_guess, eps, gp_config, precision=500):
         """
         Execute bayesian optimization on the provided closure.
 

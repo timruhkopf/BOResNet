@@ -3,6 +3,7 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+import pyro
 import torch
 import torch.distributions as td
 
@@ -35,7 +36,7 @@ class Test_BayesianOptimisation(unittest.TestCase):
 
         # SEARCH_SPACE = (10e-5, 10e-1)
         self.SEARCH_SPACE = (-5., -1.)
-        self.BUDGET = 4
+        self.BUDGET = 10
         self.NOISE = 0.
         self.INIT_lAMB = td.Uniform(*self.SEARCH_SPACE).sample([1])
         self.EPS = 0.
@@ -54,8 +55,7 @@ class Test_BayesianOptimisation(unittest.TestCase):
         self.bo = BayesianOptimizer(
             search_space=self.SEARCH_SPACE,
             budget=self.BUDGET,
-            closure=self.f,
-            noise=self.NOISE)
+            closure=self.f)
 
         gp_config = dict(initial_var=0.5, initial_length=0.5, noise=0.)
         self.bo.optimize(initial_guess=self.INIT_lAMB, eps=self.EPS,
@@ -80,6 +80,9 @@ class Test_BayesianOptimisation(unittest.TestCase):
         """Check if transformation such as log_scale works with plotting."""
         SEARCH_SPACE = (10e-5, 10e-1)
 
+        pyro.set_rng_seed(2)
+        torch.manual_seed(2)
+
         # Plotting the function on original scale.
         # x = td.Uniform(*SEARCH_SPACE).sample([1000])
         # y = self.h(x)
@@ -99,8 +102,7 @@ class Test_BayesianOptimisation(unittest.TestCase):
         bo = BayesianOptimizer(
             search_space=self.SEARCH_SPACE,  # -5, -1
             budget=self.BUDGET,
-            closure=transformed_closure,
-            noise=self.NOISE)
+            closure=transformed_closure)
 
         gp_config = dict(initial_var=0.5, initial_length=0.5, noise=0.)
         bo.optimize(initial_guess=self.INIT_lAMB, eps=self.EPS,

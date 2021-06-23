@@ -33,7 +33,7 @@ class ExpectedImprovement:
 
         return u
 
-    def max_ei(self, precision=1000, eps=0.):
+    def max_ei(self, precision=500, eps=0.):
         """
         Find the maximum of the previously calculated expected improvement.
 
@@ -52,8 +52,18 @@ class ExpectedImprovement:
         lamb = torch.linspace(*self.search_space, steps=precision)
         u = ExpectedImprovement.eval(self, lamb, eps=eps)
 
+        self.ei.append(u)
         # Find and return lamb = argmax_{lamb} u(lamb)
-        indmax = u.max(0)[1]
+        mx = u.max(0)
+        self.tracker.max_ei.append(mx[0])
+        indmax = mx[1]
+        # lamb[indmax].reshape((1,))
+        # import matplotlib.pyplot as plt
+        # plt.close()
+        # plt.plot(u)
+        # plt.plot(indmax, u[indmax], 'x')
+        # plt.show()
+
         return lamb[indmax].reshape((1,))
 
 

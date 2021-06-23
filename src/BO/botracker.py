@@ -3,8 +3,6 @@ import pickle
 import matplotlib.pyplot as plt
 import torch
 
-from src.BO.expectedimprovment import ExpectedImprovement
-
 
 class BoTracker:
     def __init__(self, search_space, budget):
@@ -36,6 +34,7 @@ class BoTracker:
 
         # List of Expected Improvements at each step
         self.ei = []
+        self.max_ei = []
 
     def save(self, path):
         """
@@ -162,13 +161,18 @@ class BoTracker:
             ax_ei_scale = ax.twinx()
 
             # (d) Plot expected improvement on other axis.
-            ei = ExpectedImprovement.eval(self, X_test, self.eps)
+            # Evaluate ei again.
+            # ei = ExpectedImprovement.eval(self, X_test, self.eps)
+
+            # Read ei from disk.
+            ei = self.ei[t]
             ax_ei_scale.plot(X_test.numpy(), ei.numpy(), label='EI')
 
             # (e) Plot next candidate.
             # max_val = ExpectedImprovement.max_ei(self) # actual recompute
             max_val = self.inquired[t + 1].reshape([1])  # read from runhistory
-            ei_val = ExpectedImprovement.eval(self, max_val).numpy()
+            # ei_val = ExpectedImprovement.eval(self, max_val).numpy()
+            ei_val = self.max_ei[t]
             max_ei = ax_ei_scale.plot(max_val.numpy(), ei_val, 'v',
                                       label='Max EI')
 
