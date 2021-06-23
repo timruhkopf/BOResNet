@@ -154,7 +154,8 @@ if TEST:
 
     matplotlib.use('TkAgg')
 
-    # modeldir = '/home/tim/PycharmProjects/BOResNet/models/server_return/run_7e40e19_20210622_163733'
+    modeldir = '/home/tim/PycharmProjects/BOResNet/models/' \
+               'server_return/run_7e40e19_20210622_163733'
     botracker = BoTracker.load(modeldir)
     botracker.plot_bo()
 
