@@ -3,8 +3,8 @@ from pathlib import Path
 
 import torch
 
-from src.BO.botracker import BoTracker
-from src.BO.gaussianprocess import GaussianProcess
+from src.bo.botracker import BoTracker
+from src.bo.gaussianprocess import GaussianProcess
 
 
 class Test_BoTracker(unittest.TestCase):

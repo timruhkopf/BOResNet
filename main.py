@@ -7,8 +7,8 @@ import pyro
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-from src.BO.bayesianoptimisation import BayesianOptimizer
 from src.blackboxpipe import BlackBoxPipe
+from src.bo.bayesianoptimisation import BayesianOptimizer
 from src.resnet import ResNet
 from src.utils import load_npz_kmnist, get_git_revision_short_hash
 
@@ -30,7 +30,7 @@ SEARCH_SPACE = (-5, -1)
 GPCONFIG = dict(initial_var=0.5, initial_length=0.5, noise=0.)
 
 if TEST:
-    BUDGET = 10
+    BUDGET = 4
     EPOCHS = 1
     BATCH_SIZE = 1
 
@@ -150,12 +150,12 @@ if TEST:
     import seaborn as sns
     import matplotlib
 
-    from src.BO.botracker import BoTracker
+    from src.bo.botracker import BoTracker
 
     matplotlib.use('TkAgg')
 
-    modeldir = '/home/tim/PycharmProjects/BOResNet/models/' \
-               'server_return/run_7e40e19_20210622_163733'
+    # modeldir = '/home/tim/PycharmProjects/BOResNet/models/' \
+    #            'server_return/run_7e40e19_20210622_163733'
     botracker = BoTracker.load(modeldir)
     botracker.plot_bo()
 

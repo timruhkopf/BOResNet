@@ -1,8 +1,8 @@
 import torch
 
-from src.BO.botracker import BoTracker
-from src.BO.expectedimprovment import ExpectedImprovement
-from src.BO.gaussianprocess import GaussianProcess
+from src.bo.botracker import BoTracker
+from src.bo.expectedimprovment import ExpectedImprovement
+from src.bo.gaussianprocess import GaussianProcess
 
 
 class BayesianOptimizer:

@@ -83,21 +83,30 @@ hyperparameter.
 Since the Optimisation Problem at hand is 1d, the current implementation is
 confined to such spaces. Target is to find the lambda, that minimizes the loss
 function. It does so, by inquiring the first lambda's cost by a randomly chosen
-lambda on the provided 1d search space (Top-left image). 
+lambda on the provided 1d search space (top-left image in from a unittest
+example).
 
-![BO example](./bo_example-1.png)
+![BO example](./results/botest_c0c5533-1.png)
 
-With this observation, a Gaussian
-Process (here: using ELBO for optimization) can be utilized to approximate the
-cost function. Using the GP and its assumption on the
+With this observation, a Gaussian Process (here: using ELBO for optimization)
+can be utilized to approximate the cost function. Using the GP and its
+assumption on the
 (spatial) correlation structure, both a mean prediction for the function can be
 estimated conditional on the observed points as well as a quantification of the
 uncertainty is now possible. Predicting mean and variance for each lambda in
 the search space, the expected improvement over the current best performing
 lambda can be calculated; thereby weighing the functions estimated mean and
-variance in an explore & exploit manner. The next candidate obtained in 
-this fashion is inquired from the provided closure and the cycle until the 
-budget on function evaluations is depleedted.
+variance in an explore & exploit manner. The next candidate obtained in this
+fashion is inquired from the provided closure and the cycle until the budget on
+function evaluations is depleedted.
+
+The final result (commit c0c5533) of a run on a single GPU took about 1h 50min:
+
+![BO example](./results/bo_c0c5533_local-1.png)
+
+Please feel free to inspect /results/BoResnet.8126510.out, which is the console
+output to these models including the GP configuration, accuracy and the
+confusion matrix of the respective incquired model.
 
 #### Implementational details
 
@@ -118,36 +127,57 @@ equation.
 In order to be capable of debugging the BO, the BO Unittests utilize an
 explicit cost function.
 
+Noteworthy is the src/bo/botracker module, upon which BayesianOptimizer is
+writing imediately on. This module is easily storable & recoverable. As
+consequence, when the script is run remotely, the plot can still be created &
+adjusted at ease locally. Further, src/expectedimprovement &
+src/gaussianprocess are written in a modular fashion, such that both of them
+can be easily replaced.
+
 ## Refactoring Ideas
+
+* Consider using /reimplement https://arxiv.org/pdf/1901.03134.pdf
+  (https://github.com/cagrell/gp_constr) which allows to use constrained GPs.
+  This can become handy, when optimizing over models, whose associated cost is
+  constrained (as is the case with CrossEntropyLoss). The current GP
+  implementation is ignorant of that fact and thus the first bo step's naive 2*
+  sd confidence band may yield negative cost solutions, which are impossible
+  under the current implementation.
+
 
 * Maybe use another third party GP implementation, that allows to fix or
   gradually change the lenghtscale & variance of the GP kernel. The current
-  optimizes both during runtime anew for each new datapoint. This may yield 
-  drastically inconsistent estimates of these hyperparameters and produce 
-  no continuouity on the smoothness of the cost function.  Further, a GP
-  which is used in an online fashion; reusing former results would be
-  computationally desirable. All of the above boils down to three advantages
-  over the current implementation:
-    1) Computational efficiency.
+  optimizes both during runtime anew for each new datapoint. This may yield
+  drastically inconsistent estimates of these hyperparameters and produce no
+  continuouity on the smoothness of the cost function. Further, a GP which is
+  used in an online fashion; reusing former results would be computationally
+  desirable. All of the above boils down to three advantages over the current
+  implementation:
+  1) Computational efficiency.
     2) A more stable & consistent GP
     3) the smoothness of the GP (kernel reach) can be fixed by the user.
 
-* Find another arg max procedure for finding the current maximum of the
-  expected improvement function. The current implementation simply 
-  evaluates ei on a tighly spanned grid over the search space and returns 
-  its max. Challenges here are multi-modal distributions and flat 
-  (zero-gradient) areas which are hard to traverse through.
 
-* Clean up BO's interface; decide where to put the arguments: either at the 
-  class.__init__ or prefereably to optimize. The latter can be advantageous 
-  when considering continuation, if the last incumbent does not provide 
-  sufficient improvement and more budget is granted.
+* Find another arg max procedure for finding the current maximum of the
+  expected improvement function. The current implementation simply evaluates ei
+  on a tighly spanned grid over the search space and returns its max.
+  Challenges here are multi-modal distributions and flat
+  (zero-gradient) areas which are hard to traverse through. A promising
+  candidate is the (albeit not yet functional)
+  ExpextedImprov_grad.max_ei function, which takes the current inquired values,
+  places an initial value roughly in the middle between them. Further it places
+  left and right of the current bounds (given these are still in the search
+  space). Then it propagates through EI using ADAM. The resulting max values
+  across these optimized points is returned as the max ei value.
+
 
 * Allow for a continuation protocol; i.e. kick off, where it left off. Maybe
   use some common interface similar to torch.optim.Optimizer incl. its step 
   method.
 
+
 * Add logging.
+
 
 * Extend to multiple dimensions of the searchspace.
 

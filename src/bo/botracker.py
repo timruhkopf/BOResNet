@@ -3,7 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 import torch
 
-from src.BO.expectedimprovment import ExpectedImprovement
+from src.bo.expectedimprovment import ExpectedImprovement
 
 
 class BoTracker:

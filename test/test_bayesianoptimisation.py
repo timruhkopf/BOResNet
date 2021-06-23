@@ -7,7 +7,7 @@ import pyro
 import torch
 import torch.distributions as td
 
-from src.BO.bayesianoptimisation import BayesianOptimizer
+from src.bo.bayesianoptimisation import BayesianOptimizer
 from src.utils import get_git_revision_short_hash
 
 matplotlib.use('TkAgg')
