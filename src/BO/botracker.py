@@ -151,9 +151,22 @@ class BoTracker:
             max_ei = ax_ei_scale.plot(max_val.numpy(), ei_val, 'v',
                                       label='Max EI')
 
-            handles, labels = ax.get_legend_handles_labels()
-            eihandles, eilabels = ax_ei_scale.get_legend_handles_labels()
+        handles, labels = ax.get_legend_handles_labels()
+        eihandles, eilabels = ax_ei_scale.get_legend_handles_labels()
 
-            handles.extend(eihandles)
-            labels.extend(eilabels)
-            self.fig.legend(handles, labels, loc='lower right')
+        handles.extend(eihandles)
+        labels.extend(eilabels)
+        self.fig.legend(handles, labels, loc='lower right')
+
+        # Set common labels
+        self.fig.text(0.5, 0.04, 'Learning rate (10^lr)', ha='center')
+        self.fig.text(0.07, 0.5, 'Avg. CrossEntropyLoss', va='center',
+                      rotation='vertical')
+        self.fig.text(0.95, 0.5, 'Expected Improvement', va='center',
+                      rotation='vertical')
+
+        # self.fig.canvas.draw()
+        # labels = [ '10^'+item.get_text() for item in ax.get_xticklabels()]
+        #
+        # self.axes[-1].set_xticklabels(labels)
+        # self.axes[-2].set_xticklabels(labels)

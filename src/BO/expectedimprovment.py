@@ -81,7 +81,7 @@ class ExpextedImprov_grad(ExpectedImprovement):
             u.backward(gradient=torch.ones_like(initials))
 
             # Consider, that this actually requires 2nd order derivative due to
-            # mu(lamb) & sd(lamb)
+            # u roughly being mu(lamb) /  sd(lamb)
             # FIXME: This part seems not to pass the gradients through
             # mu, _, sd = self.gpr_t.predict(initials)
             # mu.backward(gradient=torch.ones_like(initials))
