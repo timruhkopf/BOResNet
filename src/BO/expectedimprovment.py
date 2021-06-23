@@ -52,17 +52,13 @@ class ExpectedImprovement:
         lamb = torch.linspace(*self.search_space, steps=precision)
         u = ExpectedImprovement.eval(self, lamb, eps=eps)
 
-        self.ei.append(u)
         # Find and return lamb = argmax_{lamb} u(lamb)
         mx = u.max(0)
-        self.tracker.max_ei.append(mx[0])
         indmax = mx[1]
-        # lamb[indmax].reshape((1,))
-        # import matplotlib.pyplot as plt
-        # plt.close()
-        # plt.plot(u)
-        # plt.plot(indmax, u[indmax], 'x')
-        # plt.show()
+
+        # Track the values.
+        self.ei.append(u)
+        self.tracker.max_ei.append(mx[0])
 
         return lamb[indmax].reshape((1,))
 
@@ -73,7 +69,6 @@ class ExpextedImprov_grad(ExpectedImprovement):
         Intent: create multiple initializations (e.g. 10 evenly spaced or
         randomly placed on search space & use e.g. ADAM with some no.steps to
         reach the opt.
-
 
         :param iteration: int. Current iteration; used to create the number
         of initial values from which ADAM optimizes (total number of initial

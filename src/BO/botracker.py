@@ -3,6 +3,8 @@ import pickle
 import matplotlib.pyplot as plt
 import torch
 
+from src.BO.expectedimprovment import ExpectedImprovement
+
 
 class BoTracker:
     def __init__(self, search_space, budget):
@@ -38,7 +40,7 @@ class BoTracker:
 
     def save(self, path):
         """
-        Save the BoTracker to disk
+        Save the BoTracker to disk; including gpr_models (in a seperate file).
         :param path: str. Path to a folder on disk
         """
         # Write out gpr models.
@@ -102,17 +104,20 @@ class BoTracker:
         # DO NOT share y! early bad uncertainty estimates may yield
         # non-interpretable visual.
         nrows = self.budget // 2 + self.budget % 2
-        self.fig, self.axes = plt.subplots(nrows, 2, sharex=True)
+        self.fig, self.axes = plt.subplots(nrows, 2)  # sharex=True
         self.axes = self.axes.flatten().tolist()
 
         # Remove excess plot (if there is one)
         # Notice, that the first obs. is inquired without a gp, so gp is
         # shorter by one.
-        FLAG_REMOVED = False
         if (self.budget - 1) % 2 > 0:
             self.fig.delaxes(self.axes[-1])
             self.axes.pop()
-            FLAG_REMOVED = True
+
+        # Remove ticks & labels from plots (simulate sharex=True - this is
+        # the simplest way to work around it, when removing an excess plot.
+        for ax in self.axes[:-2]:
+            ax.xaxis.set_visible(False)
 
         title = 'Bayesian Optimization for steps 2-{}'
         self.fig.suptitle(title.format(self.budget))
@@ -121,11 +126,6 @@ class BoTracker:
 
         for t, ax in enumerate(self.axes):
             ax.set_xlim(*self.search_space)
-
-            # TODO for common labels: remove labels to share a single label
-            #  per side
-            # ax.set_xlabel('.', color=(0, 0, 0, 0))
-            # ax.set_ylabel('.', color=(0, 0, 0, 0))
 
             # (a) Plot the observed data points.
             obs = ax.plot(self.inquired[:t + 1].numpy(),
@@ -161,18 +161,24 @@ class BoTracker:
             ax_ei_scale = ax.twinx()
 
             # (d) Plot expected improvement on other axis.
-            # Evaluate ei again.
-            # ei = ExpectedImprovement.eval(self, X_test, self.eps)
+            if len(self.ei) > 0:
+                # Read ei from disk.
+                ei = self.ei[t]
+            else:
+                # Evaluate ei again.
+                ei = ExpectedImprovement.eval(self, X_test, self.eps)
 
-            # Read ei from disk.
-            ei = self.ei[t]
             ax_ei_scale.plot(X_test.numpy(), ei.numpy(), label='EI')
 
             # (e) Plot next candidate.
-            # max_val = ExpectedImprovement.max_ei(self) # actual recompute
-            max_val = self.inquired[t + 1].reshape([1])  # read from runhistory
-            # ei_val = ExpectedImprovement.eval(self, max_val).numpy()
-            ei_val = self.max_ei[t]
+            if len(self.max_ei):
+                max_val = self.inquired[t + 1].reshape(
+                    [1])  # read from runhistory
+                ei_val = self.max_ei[t]
+            else:
+                max_val = ExpectedImprovement.max_ei(self)  # actual recompute
+                ei_val = ExpectedImprovement.eval(self, max_val).numpy()
+
             max_ei = ax_ei_scale.plot(max_val.numpy(), ei_val, 'v',
                                       label='Max EI')
 
@@ -189,25 +195,3 @@ class BoTracker:
                       rotation='vertical')
         self.fig.text(0.95, 0.5, 'Expected Improvement', va='center',
                       rotation='vertical')
-
-        # Set tick labels visible of foremost plot. --------------------------
-        # self.axes[-2].get_xaxis().get_majorticklabels().set_visible(True)
-        # self.axes[-2].set_xticklabels([str(i) for i in range(-5, 0, 1)])
-
-        # import matplotlib.ticker as mticker
-        #
-        # label_format = '{:,.0f}'
-        # ticks_loc = self.axes[-2].get_xticks().tolist()
-        # self.axes[-2].xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
-        # self.axes[-2].set_xticklabels([label_format.format(x) for x in
-        #                              ticks_loc])
-
-        # self.axes[-2].get_xticklabels().set_visible(True)
-        # self.fig.canvas.draw()
-        # labels = [ item.get_text() for item in self.axes[-1].get_xticklabels()]
-        #
-        # self.axes[-2].xaxis = self.axes[-1].xaxis #  set_xtickslabels(
-        # # self.axes[
-        # # -1].axes)
-        #
-        plt.show()
