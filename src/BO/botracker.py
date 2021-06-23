@@ -136,7 +136,8 @@ class BoTracker:
             # (b) Plot the current incumbent.
             # Annotate the plot with exact value.
             incumb = self.incumbent[t].numpy()
-            incumb_cost = self.costs[self.inc_idx].numpy()
+            incidx = torch.argmin(self.costs[:t + 1])
+            incumb_cost = self.costs[incidx].numpy()
             inc = ax.plot(incumb, incumb_cost, 'o', label='Incumbent')
 
             # (c1) Plot the cost approximation & uncertainty.
